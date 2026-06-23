@@ -24,12 +24,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
+DROP POLICY IF EXISTS "Allow individual read" ON public.profiles;
 CREATE POLICY "Allow individual read" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Allow individual insert" ON public.profiles;
 CREATE POLICY "Allow individual insert" ON public.profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Allow individual update" ON public.profiles;
 CREATE POLICY "Allow individual update" ON public.profiles
     FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
@@ -53,6 +56,7 @@ CREATE TABLE IF NOT EXISTS public.tailored_resumes (
 ALTER TABLE public.tailored_resumes ENABLE ROW LEVEL SECURITY;
 
 -- Create policy that allows users to manage their own resumes, and public access to guest resumes
+DROP POLICY IF EXISTS "Allow authenticated or guest CRUD operations" ON public.tailored_resumes;
 CREATE POLICY "Allow authenticated or guest CRUD operations" ON public.tailored_resumes
     FOR ALL
     USING (auth.uid() = user_id OR user_id IS NULL)
