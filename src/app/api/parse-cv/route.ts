@@ -40,12 +40,13 @@ export async function POST(req: NextRequest) {
 
     if (file.name.toLowerCase().endsWith(".pdf")) {
       const require = createRequire(import.meta.url);
-      let pdfParser = require("pdf-parse");
-      if (typeof pdfParser !== "function" && pdfParser.default) {
-        pdfParser = pdfParser.default;
-      }
-      const data = await pdfParser(buffer);
+      const pdfModule = require("pdf-parse");
+      const PDFParseClass = pdfModule.PDFParse;
+      
+      const parser = new PDFParseClass({ data: buffer });
+      const data = await parser.getText();
       text = data.text;
+      await parser.destroy().catch(() => {});
     } else {
       // Decode txt or other format directly
       text = new TextDecoder().decode(buffer);
