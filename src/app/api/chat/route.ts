@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
       profileSchool,
       profileDegree,
       profileAspiration,
+      profileAdisadel,
       aiTone,
       aiLanguage,
       khadijaMode,
@@ -43,10 +44,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Build custom system instruction based on settings
+    // Build custom system instruction dynamically based on settings
     let customSystemPrompt = SYSTEM_PROMPT;
-    if (profileName || aiTone || aiLanguage || khadijaMode) {
-      customSystemPrompt = `You are ResuTailor, a resume tailoring assistant. You are helping the user, ${profileName || "Bernard"}, a student at ${profileSchool || "UMaT"} studying ${profileDegree || "Cybersecurity"}. Their goal is: ${profileAspiration || "US graduate programs"}.
+    
+    // Build candidate details dynamically so it fits both students and professionals
+    let candidateDescription = `You are helping the user, ${profileName || "Bernard"}.`;
+    
+    const educationParts: string[] = [];
+    if (profileDegree) educationParts.push(`studying/holding a background in ${profileDegree}`);
+    if (profileSchool) educationParts.push(`at ${profileSchool}`);
+    
+    if (educationParts.length > 0) {
+      candidateDescription += ` They are currently ${educationParts.join(" ")}.`;
+    } else {
+      candidateDescription += ` They are a professional candidate.`;
+    }
+    
+    if (profileAspiration) {
+      candidateDescription += ` Their target career goal or aspiration is: ${profileAspiration}.`;
+    }
+    
+    if (profileAdisadel) {
+      candidateDescription += ` They are an alumnus of Adisadel College.`;
+    }
+    
+    customSystemPrompt = `You are ResuTailor, a resume tailoring assistant. ${candidateDescription}
       
 When the user provides their CV and a job description:
 1. Summarise the top 5 requirements from the job in one short paragraph

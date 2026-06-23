@@ -713,6 +713,14 @@ export default function Workspace() {
           cvText,
           jobText,
           generateResume: false,
+          profileName,
+          profileSchool,
+          profileDegree,
+          profileAspiration,
+          aiTone,
+          aiLanguage,
+          khadijaMode,
+          profileAdisadel,
         }),
       });
 
@@ -759,6 +767,7 @@ export default function Workspace() {
           aiTone,
           aiLanguage,
           khadijaMode,
+          profileAdisadel,
         }),
       });
 
@@ -806,6 +815,7 @@ export default function Workspace() {
           aiTone,
           aiLanguage,
           khadijaMode,
+          profileAdisadel,
         }),
       });
 
