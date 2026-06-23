@@ -1,26 +1,355 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbfbfa; /* Warm Alabaster */
+  --foreground: #111111; /* Ink Black */
+  --border-mute: #e5e5e0; /* Warm clay borders */
+  --surface: #ffffff; /* Chalk White surface cards */
+  --text-muted: #71717a; /* Secondary text zinc */
+}
+
+/* Explicit class override for toggling */
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --border-mute: #27272a;
+  --surface: #18181b;
+  --text-muted: #a1a1aa;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-border-mute: var(--border-mute);
+  --color-surface: var(--surface);
+  --color-text-muted: var(--text-muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background-color: var(--background);
+  background-image: radial-gradient(circle at 1px 1px, var(--border-mute) 1px, transparent 0);
+  background-size: 24px 24px;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Print layout optimizations for A4 Export */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Hide headers, footers, buttons, and input sections */
+  header, footer, nav, button, aside, .no-print {
+    display: none !important;
+  }
+
+  /* Expand print wrapper to full page */
+  .print-page-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
   }
 }
 
-body {
-  background: var(--background);
+/* Custom scrollbars for clean pane layout */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+/* ═══ WORKSPACE STYLES ═══ */
+
+/* Animations */
+@keyframes workspace-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes workspace-slide-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes workspace-msg-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes workspace-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes workspace-typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.workspace-fade-in {
+  animation: workspace-fade-in 0.4s ease-out;
+}
+
+.workspace-slide-in {
+  animation: workspace-slide-in 0.35s ease-out;
+}
+
+.workspace-msg-in {
+  animation: workspace-msg-in 0.3s ease-out both;
+}
+
+/* Dropzone */
+.workspace-dropzone {
+  border: 2px dashed var(--border-mute);
+  border-radius: 1rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: var(--surface);
+}
+
+.workspace-dropzone:hover {
+  border-color: #a1a1aa;
+  background: color-mix(in srgb, var(--surface) 90%, var(--foreground) 10%);
+  transform: translateY(-1px);
+}
+
+.workspace-dropzone-active {
+  border-color: #10b981;
+  background: color-mix(in srgb, var(--surface) 92%, #10b981 8%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(16, 185, 129, 0.15);
+}
+
+/* Chat scroll area */
+.workspace-chat-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Chat bubbles */
+.workspace-bubble {
+  max-width: 80%;
+  border-radius: 1rem;
+  padding: 0.875rem 1rem;
+  line-height: 1.5;
+}
+
+.workspace-bubble-ai {
+  background: var(--surface);
+  border: 1px solid var(--border-mute);
+  border-top-left-radius: 0.25rem;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+.workspace-bubble-user {
+  background: var(--foreground);
+  color: var(--background);
+  border-top-right-radius: 0.25rem;
+}
+
+/* Typing dots */
+.workspace-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  display: inline-block;
+  animation: workspace-typing 1.2s infinite;
+}
+
+/* Input container */
+.workspace-input-container {
+  background: var(--surface);
+  border: 1px solid var(--border-mute);
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.workspace-input-container:focus-within {
+  border-color: #a1a1aa;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--foreground) 5%, transparent 95%);
+}
+
+.workspace-textarea {
+  width: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 0.875rem 1rem 0.25rem;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.workspace-textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* Input buttons */
+.workspace-input-btn {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.workspace-input-btn:hover {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent 94%);
+  color: var(--foreground);
+}
+
+.workspace-input-btn-recording {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  animation: workspace-pulse-ring 1.5s infinite;
+}
+
+.workspace-send-btn {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--foreground);
+  color: var(--background);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workspace-send-btn:hover {
+  opacity: 0.85;
+  transform: scale(1.05);
+}
+
+.workspace-send-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Generate button */
+.workspace-generate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.3);
+}
+
+.workspace-generate-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.4);
+}
+
+.workspace-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Action buttons in preview header */
+.workspace-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-mute);
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.workspace-action-btn:hover {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.workspace-action-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-size: 0.625rem;
+  font-weight: 700;
+  background: var(--foreground);
+  color: var(--background);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.workspace-action-btn-primary:hover {
+  opacity: 0.85;
+}
+
+/* Compact sidebar dropzone */
+.workspace-dropzone-sm {
+  border: 1.5px dashed var(--border-mute);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--surface);
+}
+
+.workspace-dropzone-sm:hover {
+  border-color: #a1a1aa;
+  background: color-mix(in srgb, var(--surface) 92%, var(--foreground) 8%);
+}
+
+.workspace-dropzone-sm-active {
+  border-color: #10b981;
+  background: color-mix(in srgb, var(--surface) 94%, #10b981 6%);
 }
