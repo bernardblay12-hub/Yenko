@@ -133,6 +133,67 @@ export default function Workspace() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
+  // Auth state
+  const [supabaseUser, setSupabaseUser] = useState<any>(null);
+
+  // Monitor Supabase auth session
+  useEffect(() => {
+    if (!supabase) return;
+
+    // Get current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        setProfileName(session.user.user_metadata?.full_name || session.user.email || "Bernard Blay");
+        setProfileEmail(session.user.email || "bblay@umat.edu.gh");
+      }
+    });
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        setProfileName(session.user.user_metadata?.full_name || session.user.email || "Bernard Blay");
+        setProfileEmail(session.user.email || "bblay@umat.edu.gh");
+        if (event === "SIGNED_IN") {
+          toast.success("Welcome back, bro!");
+        }
+      } else {
+        setSupabaseUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    if (!supabase) {
+      toast.error("Supabase is not configured yet. Add your anon key in .env.local.");
+      return;
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: typeof window !== "undefined" ? window.location.origin + "/workspace" : "",
+        queryParams: {
+          client_id: "696756760553-4lus6v4geqt91tlhgb574lop5ks2fou0.apps.googleusercontent.com"
+        }
+      },
+    });
+    if (error) {
+      toast.error("Google login failed: " + error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setSupabaseUser(null);
+    setProfileName("Bernard Blay");
+    setProfileEmail("bblay@umat.edu.gh");
+    toast.success("Signed out successfully.");
+  };
+
   // Load saved sessions from LocalStorage & Supabase
   useEffect(() => {
     const loadSessions = async () => {
@@ -1119,15 +1180,41 @@ export default function Workspace() {
 
             {/* Profile section */}
             <div className="px-3 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800 border border-border-mute flex items-center justify-center">
-                  <User className="h-3.5 w-3.5 text-text-muted" />
+              {supabaseUser ? (
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  {supabaseUser.user_metadata?.avatar_url ? (
+                    <img
+                      src={supabaseUser.user_metadata.avatar_url}
+                      alt={profileName}
+                      className="w-8 h-8 rounded-full border border-border-mute object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white border border-border-mute flex items-center justify-center font-bold text-xs uppercase">
+                      {profileName.charAt(0)}
+                    </div>
+                  )}
+                  <div className="overflow-hidden">
+                    <span className="text-[11px] font-semibold text-foreground block leading-tight truncate" title={profileName}>
+                      {profileName}
+                    </span>
+                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold block leading-tight">
+                      {profileAdisadel ? "Adisadel Alum" : "Connected"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[11px] font-semibold text-foreground block leading-tight">{profileName}</span>
-                  <span className="text-[9px] text-text-muted font-mono">{profileAdisadel ? "Adisadel Alum · " : ""}Free plan</span>
-                </div>
-              </div>
+              ) : (
+                <button
+                  onClick={handleGoogleLogin}
+                  className="flex-1 mr-2 px-3 py-1.5 rounded-lg border border-border-mute bg-surface hover:bg-background text-foreground text-[10px] font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <img
+                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    alt="Google"
+                    className="w-3.5 h-3.5"
+                  />
+                  Sign in with Google
+                </button>
+              )}
               <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => setShowSettings(true)}
@@ -1136,13 +1223,15 @@ export default function Workspace() {
                 >
                   <Settings className="h-3.5 w-3.5" />
                 </button>
-                <button
-                  onClick={() => toast.info("Help & docs coming soon!")}
-                  className="p-1.5 rounded-lg text-text-muted hover:text-foreground hover:bg-background transition-colors cursor-pointer"
-                  title="Help"
-                >
-                  <HelpCircle className="h-3.5 w-3.5" />
-                </button>
+                {supabaseUser && (
+                  <button
+                    onClick={handleLogout}
+                    className="p-1.5 rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Log Out"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1427,6 +1516,40 @@ export default function Workspace() {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {settingsTab === "profile" && (
                 <div className="space-y-4 workspace-fade-in">
+                  {/* Google OAuth account connection status */}
+                  <div className="p-3 bg-background border border-border-mute rounded-xl flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src="https://www.svgrepo.com/show/475656/google-color.svg"
+                        alt="Google"
+                        className="w-4 h-4"
+                      />
+                      <div>
+                        <span className="text-xs font-bold block leading-none mb-1">Google Authentication</span>
+                        <span className="text-[9px] text-text-muted">
+                          {supabaseUser ? `Linked to ${supabaseUser.email}` : "Not connected"}
+                        </span>
+                      </div>
+                    </div>
+                    {supabaseUser ? (
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/15 border border-red-500/25 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                      >
+                        Disconnect
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                      >
+                        Connect Google
+                      </button>
+                    )}
+                  </div>
+
                   <div>
                     <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
                       Full Name
