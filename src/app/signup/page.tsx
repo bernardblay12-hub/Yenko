@@ -20,8 +20,8 @@ export default function SignUpPage() {
   // If already logged in, redirect to workspace
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+    supabase.auth.getSession().then((res) => {
+      if (res.data?.session) {
         router.push("/workspace");
       }
     });
