@@ -34,22 +34,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+        const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    console.log("----------------- PARSE CV DEBUG -----------------");
+    console.log("File name:", file.name);
+    console.log("File size (File API):", file.size);
+    console.log("ArrayBuffer byteLength:", arrayBuffer.byteLength);
+    console.log("First 10 bytes:", Array.from(uint8Array.slice(0, 10)));
+    const isPdfHeader = uint8Array[0] === 37 && uint8Array[1] === 80 && uint8Array[2] === 68 && uint8Array[3] === 70;
+    console.log("Starts with %PDF:", isPdfHeader);
+    console.log("--------------------------------------------------");
+
     let text = "";
 
     if (file.name.toLowerCase().endsWith(".pdf")) {
+      if (!isPdfHeader) {
+        return NextResponse.json({
+          error: `Invalid PDF file: "${file.name}" does not start with a valid PDF header (%PDF). Got bytes: [${Array.from(uint8Array.slice(0, 4)).join(", ")}] ("${Array.from(uint8Array.slice(0, 4)).map(b => (b >= 32 && b <= 126 ? String.fromCharCode(b) : "?")).join("")}"). Please verify the file is not corrupted.`
+        }, { status: 400 });
+      }
+
       const require = createRequire(import.meta.url);
       const pdfModule = require("pdf-parse");
       const PDFParseClass = pdfModule.PDFParse;
       
-      const parser = new PDFParseClass({ data: buffer });
+      const parser = new PDFParseClass({ data: uint8Array });
       const data = await parser.getText();
       text = data.text;
       await parser.destroy().catch(() => {});
     } else {
       // Decode txt or other format directly
-      text = new TextDecoder().decode(buffer);
+      text = new TextDecoder().decode(uint8Array);
     }
 
     return NextResponse.json({ text });

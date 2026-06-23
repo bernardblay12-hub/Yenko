@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import A4ResumePreview, { ResumeData } from "@/components/A4ResumePreview";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -38,6 +39,7 @@ import {
 
 // ─── Component ───────────────────────────────────────────────────
 export default function Workspace() {
+  const router = useRouter();
   // ── Theme ──────────────────────────────────────────────────────
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
@@ -278,6 +280,7 @@ export default function Workspace() {
     setProfileName("Bernard Blay");
     setProfileEmail("bblay@umat.edu.gh");
     toast.success("Signed out successfully.");
+    router.push("/login");
   };
 
   // Load saved sessions from LocalStorage & Supabase
