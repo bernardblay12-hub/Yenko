@@ -5,6 +5,7 @@ import Link from "next/link";
 import A4ResumePreview, { ResumeData } from "@/components/A4ResumePreview";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/lib/supabase";
 import {
   Upload,
   Cpu,
@@ -127,6 +128,207 @@ export default function Workspace() {
   // Security settings
   const [customApiKey, setCustomApiKey] = useState("");
   const [isEncrypted, setIsEncrypted] = useState(true);
+
+  // ── Session & History states ────────────────────────────────────
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+  // Load saved sessions from LocalStorage & Supabase
+  useEffect(() => {
+    const loadSessions = async () => {
+      // 1. Load from LocalStorage
+      let localSaved: any[] = [];
+      const storedSessions = localStorage.getItem("workspace_sessions");
+      if (storedSessions) {
+        try {
+          localSaved = JSON.parse(storedSessions);
+          setSessions(localSaved);
+        } catch (e) {
+          console.error("Failed to parse local sessions:", e);
+        }
+      }
+
+      // 2. Load from Supabase if configured
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (anonKey) {
+        try {
+          const { data, error } = await supabase
+            .from("tailored_resumes")
+            .select("*")
+            .order("updated_at", { ascending: false });
+
+          if (error) {
+            console.warn("Supabase fetch failed (check if tailored_resumes table exists):", error.message);
+          } else if (data && data.length > 0) {
+            const mappedSessions = data.map((d: any) => ({
+              id: d.id,
+              name: d.name,
+              fileName: d.file_name,
+              cvText: d.cv_text,
+              jobLinks: d.job_links || [],
+              activeJobIndex: d.active_job_index,
+              messages: d.chat_messages || [],
+              resumeData: d.resume_data || {
+                name: "",
+                title: "",
+                email: "",
+                phone: "",
+                website: "",
+                summary: "",
+                experience: [],
+                education: [],
+                skills: [],
+              },
+              updatedAt: d.updated_at,
+            }));
+            
+            setSessions(mappedSessions);
+            localStorage.setItem("workspace_sessions", JSON.stringify(mappedSessions));
+          }
+        } catch (e: any) {
+          console.warn("Supabase integration error:", e.message);
+        }
+      }
+    };
+
+    loadSessions();
+  }, []);
+
+  const saveSession = async () => {
+    let sessionName = "Untitled Tailoring";
+    if (activeJobIndex !== null && jobLinks[activeJobIndex]) {
+      const link = jobLinks[activeJobIndex];
+      sessionName = link.replace(/^https?:\/\/(www\.)?/, "").split("/")[0] || "Job Role";
+    } else if (resumeData.title) {
+      sessionName = resumeData.title;
+    }
+
+    const sessionId = activeSessionId || crypto.randomUUID();
+    const updatedTime = new Date().toISOString();
+
+    const newSession = {
+      id: sessionId,
+      name: sessionName,
+      fileName,
+      cvText,
+      jobLinks,
+      activeJobIndex,
+      messages,
+      resumeData,
+      updatedAt: updatedTime,
+    };
+
+    const index = sessions.findIndex((s) => s.id === sessionId);
+    let updatedSessions = [...sessions];
+    if (index >= 0) {
+      updatedSessions[index] = newSession;
+    } else {
+      updatedSessions = [newSession, ...updatedSessions];
+    }
+    setSessions(updatedSessions);
+    localStorage.setItem("workspace_sessions", JSON.stringify(updatedSessions));
+    setActiveSessionId(sessionId);
+
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (anonKey) {
+      const toastId = toast.loading("Saving to Supabase...");
+      try {
+        const { error } = await supabase.from("tailored_resumes").upsert({
+          id: sessionId,
+          name: sessionName,
+          file_name: fileName,
+          cv_text: cvText,
+          job_links: jobLinks,
+          active_job_index: activeJobIndex,
+          chat_messages: messages,
+          resume_data: resumeData,
+          updated_at: updatedTime,
+        });
+
+        if (error) {
+          toast.error("Saved locally. Supabase error: " + error.message, { id: toastId });
+        } else {
+          toast.success("Successfully saved to local & Supabase vault!", { id: toastId });
+        }
+      } catch (e: any) {
+        toast.error("Saved locally. Connection error.", { id: toastId });
+      }
+    } else {
+      toast.success("Saved successfully in secure local storage!");
+    }
+  };
+
+  const loadSession = (session: any) => {
+    setActiveSessionId(session.id);
+    setFileName(session.fileName || "");
+    setCvText(session.cvText || "");
+    setJobLinks(session.jobLinks || []);
+    setActiveJobIndex(session.activeJobIndex);
+    setMessages(session.messages || []);
+    setResumeData(session.resumeData || {
+      name: "",
+      title: "",
+      email: "",
+      phone: "",
+      website: "",
+      summary: "",
+      experience: [],
+      education: [],
+      skills: [],
+    });
+    setHasStarted(session.messages && session.messages.length > 0);
+    toast.success(`Loaded session: ${session.name}`);
+  };
+
+  const startNewSession = () => {
+    setActiveSessionId(null);
+    setFileName("");
+    setCvText("");
+    setJobLinks([]);
+    setActiveJobIndex(null);
+    setMessages([]);
+    setResumeData({
+      name: "",
+      title: "",
+      email: "",
+      phone: "",
+      website: "",
+      summary: "",
+      experience: [],
+      education: [],
+      skills: [],
+    });
+    setHasStarted(false);
+    toast.success("Started a new tailoring session!");
+  };
+
+  const deleteSession = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this session?")) return;
+
+    const updatedSessions = sessions.filter((s) => s.id !== sessionId);
+    setSessions(updatedSessions);
+    localStorage.setItem("workspace_sessions", JSON.stringify(updatedSessions));
+    if (activeSessionId === sessionId) {
+      startNewSession();
+    }
+
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (anonKey) {
+      try {
+        const { error } = await supabase.from("tailored_resumes").delete().eq("id", sessionId);
+        if (error) {
+          toast.error("Deleted locally. Supabase sync error.");
+        } else {
+          toast.success("Deleted from cloud storage.");
+        }
+      } catch (e) {
+        console.error("Supabase delete failed:", e);
+      }
+    } else {
+      toast.success("Deleted session.");
+    }
+  };
 
   // Load settings from LocalStorage
   useEffect(() => {
@@ -820,6 +1022,77 @@ export default function Workspace() {
                     </div>
                   </div>
                 ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border-mute" />
+
+            {/* ── Step 3: Saved History Sessions ────────────── */}
+            <div>
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className={`w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center flex-shrink-0 ${
+                  sessions.length > 0
+                    ? "bg-emerald-500 text-white"
+                    : "border border-border-mute text-text-muted bg-background"
+                }`}>
+                  {sessions.length > 0 ? "✓" : "3"}
+                </span>
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-text-muted font-mono">
+                  Saved Sessions
+                </h3>
+                <button
+                  onClick={startNewSession}
+                  className="ml-auto text-[9px] font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-1 cursor-pointer bg-transparent border-none"
+                  title="New Session"
+                >
+                  <Plus className="h-3 w-3" />
+                  New
+                </button>
+              </div>
+
+              {/* Sessions list */}
+              <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
+                {sessions.length === 0 ? (
+                  <p className="text-[10px] text-text-muted/50 font-mono text-center py-2">
+                    No saved sessions
+                  </p>
+                ) : (
+                  sessions.map((session) => (
+                    <div
+                      key={session.id}
+                      onClick={() => loadSession(session)}
+                      className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border ${
+                        activeSessionId === session.id
+                          ? "bg-emerald-500/5 border-emerald-500/20"
+                          : "hover:bg-background border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden flex-1">
+                        <FileText className={`h-3.5 w-3.5 flex-shrink-0 ${
+                          activeSessionId === session.id ? "text-emerald-500" : "text-zinc-400"
+                        }`} />
+                        <div className="overflow-hidden">
+                          <span className={`block truncate text-[11px] ${
+                            activeSessionId === session.id ? "font-semibold text-foreground" : "text-text-muted"
+                          }`} title={session.name}>
+                            {session.name}
+                          </span>
+                          <span className="text-[8px] text-text-muted/40 font-mono block">
+                            {new Date(session.updatedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => deleteSession(e, session.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-red-500 rounded transition-colors cursor-pointer border-none bg-transparent"
+                        title="Delete Session"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -1040,7 +1313,7 @@ export default function Workspace() {
                 </span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => toast.success("Session saved!")}
+                    onClick={saveSession}
                     className="workspace-action-btn"
                   >
                     <Save className="h-3.5 w-3.5" />
