@@ -106,7 +106,6 @@ export default function Workspace() {
 
   // ── Settings State ─────────────────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState("profile"); // profile, ai, security
   
   // Profile settings
   const [profileName, setProfileName] = useState("Bernard Blay");
@@ -119,15 +118,11 @@ export default function Workspace() {
   const [profileAdisadel, setProfileAdisadel] = useState(true);
   const [profileAspiration, setProfileAspiration] = useState("US Graduate School & Security Research");
   
-  // AI settings
+  // AI settings (Default values, hidden from UI)
   const [aiTone, setAiTone] = useState("cooperative"); // cooperative, recruiter, auditor
   const [aiLanguage, setAiLanguage] = useState("en"); // en, fr, de, dar
   const [aiStrictness, setAiStrictness] = useState("high"); // low, medium, high
   const [khadijaMode, setKhadijaMode] = useState(false); // Special Easter Egg 💖
-  
-  // Security settings
-  const [customApiKey, setCustomApiKey] = useState("");
-  const [isEncrypted, setIsEncrypted] = useState(true);
 
   // ── Session & History states ────────────────────────────────────
   const [sessions, setSessions] = useState<any[]>([]);
@@ -135,6 +130,95 @@ export default function Workspace() {
 
   // Auth state
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
+
+  // Sync guest sessions from localStorage into Supabase
+  const syncGuestSessions = async (userId: string) => {
+    const stored = localStorage.getItem("workspace_sessions");
+    if (!stored) return;
+
+    try {
+      const localSaved = JSON.parse(stored);
+      if (localSaved.length === 0) return;
+
+      const upsertPromises = localSaved.map((s: any) => {
+        return supabase.from("tailored_resumes").upsert({
+          id: s.id,
+          user_id: userId,
+          name: s.name,
+          file_name: s.fileName,
+          cv_text: s.cvText,
+          job_links: s.jobLinks,
+          active_job_index: s.activeJobIndex,
+          chat_messages: s.messages,
+          resume_data: s.resumeData,
+          updated_at: s.updatedAt,
+        });
+      });
+
+      await Promise.all(upsertPromises);
+      // Clear local storage sessions after syncing to prevent duplicate sync prompts
+      // wait, actually keeping it in local storage is fine, but we can set them.
+      toast.success("Synchronized your guest resume history to your account!");
+    } catch (err: any) {
+      console.warn("Failed to sync guest sessions:", err.message);
+    }
+  };
+
+  const fetchAndSyncProfile = async (userId: string, userEmail: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (error) {
+        console.warn("Error fetching profile from Supabase:", error.message);
+        return;
+      }
+
+      if (data) {
+        if (data.full_name) setProfileName(data.full_name);
+        setProfileEmail(userEmail);
+        if (data.phone) setProfilePhone(data.phone);
+        if (data.website) setProfileWebsite(data.website);
+        if (data.school) setProfileSchool(data.school);
+        if (data.degree) setProfileDegree(data.degree);
+        if (data.grad_year) setProfileGradYear(data.grad_year);
+        if (data.adisadel !== null) setProfileAdisadel(data.adisadel);
+        if (data.aspiration) setProfileAspiration(data.aspiration);
+        if (data.ai_tone) setAiTone(data.ai_tone);
+        if (data.ai_language) setAiLanguage(data.ai_language);
+        if (data.ai_strictness) setAiStrictness(data.ai_strictness);
+        if (data.khadija_mode !== null) setKhadijaMode(data.khadija_mode);
+      } else {
+        // Create initial profile in database using current local settings
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: userId,
+            full_name: profileName || "Bernard Blay",
+            phone: profilePhone || "+233 55 123 4567",
+            website: profileWebsite || "github.com/bernardblay",
+            school: profileSchool || "University of Mines and Technology (UMaT)",
+            degree: profileDegree || "BSc Computer Science & Engineering",
+            grad_year: profileGradYear || "2028",
+            adisadel: profileAdisadel,
+            aspiration: profileAspiration || "US Graduate School & Security Research",
+            ai_tone: aiTone,
+            ai_language: aiLanguage,
+            ai_strictness: aiStrictness,
+            khadija_mode: khadijaMode,
+          });
+
+        if (insertError) {
+          console.error("Error creating initial profile in Supabase:", insertError.message);
+        }
+      }
+    } catch (e: any) {
+      console.error("Error in fetchAndSyncProfile:", e.message);
+    }
+  };
 
   // Monitor Supabase auth session
   useEffect(() => {
@@ -146,6 +230,7 @@ export default function Workspace() {
         setSupabaseUser(session.user);
         setProfileName(session.user.user_metadata?.full_name || session.user.email || "Bernard Blay");
         setProfileEmail(session.user.email || "bblay@umat.edu.gh");
+        fetchAndSyncProfile(session.user.id, session.user.email || "");
       }
     });
 
@@ -155,6 +240,7 @@ export default function Workspace() {
         setSupabaseUser(session.user);
         setProfileName(session.user.user_metadata?.full_name || session.user.email || "Bernard Blay");
         setProfileEmail(session.user.email || "bblay@umat.edu.gh");
+        fetchAndSyncProfile(session.user.id, session.user.email || "");
         if (event === "SIGNED_IN") {
           toast.success("Welcome back, bro!");
         }
@@ -209,13 +295,17 @@ export default function Workspace() {
         }
       }
 
-      // 2. Load from Supabase if configured
+      // 2. Load from Supabase if configured and user is logged in
       const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (anonKey) {
+      if (anonKey && supabaseUser) {
         try {
+          // Sync local guest sessions into Supabase first
+          await syncGuestSessions(supabaseUser.id);
+
           const { data, error } = await supabase
             .from("tailored_resumes")
             .select("*")
+            .eq("user_id", supabaseUser.id)
             .order("updated_at", { ascending: false });
 
           if (error) {
@@ -253,7 +343,7 @@ export default function Workspace() {
     };
 
     loadSessions();
-  }, []);
+  }, [supabaseUser]);
 
   const saveSession = async () => {
     let sessionName = "Untitled Tailoring";
@@ -296,6 +386,7 @@ export default function Workspace() {
       try {
         const { error } = await supabase.from("tailored_resumes").upsert({
           id: sessionId,
+          user_id: supabaseUser ? supabaseUser.id : null,
           name: sessionName,
           file_name: fileName,
           cv_text: cvText,
@@ -407,7 +498,6 @@ export default function Workspace() {
       const storedLanguage = localStorage.getItem("ai_language");
       const storedStrictness = localStorage.getItem("ai_strictness");
       const storedKhadija = localStorage.getItem("khadija_mode");
-      const storedApiKey = localStorage.getItem("custom_api_key");
 
       if (storedName) setProfileName(storedName);
       if (storedEmail) setProfileEmail(storedEmail);
@@ -422,11 +512,10 @@ export default function Workspace() {
       if (storedLanguage) setAiLanguage(storedLanguage);
       if (storedStrictness) setAiStrictness(storedStrictness);
       if (storedKhadija) setKhadijaMode(storedKhadija === "true");
-      if (storedApiKey) setCustomApiKey(storedApiKey);
     }
   }, []);
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     localStorage.setItem("profile_name", profileName);
     localStorage.setItem("profile_email", profileEmail);
     localStorage.setItem("profile_phone", profilePhone);
@@ -440,7 +529,6 @@ export default function Workspace() {
     localStorage.setItem("ai_language", aiLanguage);
     localStorage.setItem("ai_strictness", aiStrictness);
     localStorage.setItem("khadija_mode", String(khadijaMode));
-    localStorage.setItem("custom_api_key", customApiKey);
 
     // Update resumeData default values if empty or standard
     if (resumeData.name === "" || resumeData.name === "Bernard Blay") {
@@ -453,7 +541,40 @@ export default function Workspace() {
       }));
     }
 
-    toast.success("Settings saved successfully! Secure local storage synchronized.");
+    if (supabase && supabaseUser) {
+      const toastId = toast.loading("Saving settings to Supabase...");
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({
+            id: supabaseUser.id,
+            full_name: profileName,
+            phone: profilePhone,
+            website: profileWebsite,
+            school: profileSchool,
+            degree: profileDegree,
+            grad_year: profileGradYear,
+            adisadel: profileAdisadel,
+            aspiration: profileAspiration,
+            ai_tone: aiTone,
+            ai_language: aiLanguage,
+            ai_strictness: aiStrictness,
+            khadija_mode: khadijaMode,
+            updated_at: new Date().toISOString(),
+          });
+
+        if (error) {
+          toast.error("Settings saved locally. Supabase error: " + error.message, { id: toastId });
+        } else {
+          toast.success("Settings synchronized across devices!", { id: toastId });
+        }
+      } catch (err: any) {
+        toast.error("Settings saved locally. Connection error.", { id: toastId });
+      }
+    } else {
+      toast.success("Settings saved successfully! Secure local storage synchronized.");
+    }
+
     setShowSettings(false);
   };
 
@@ -638,7 +759,6 @@ export default function Workspace() {
           aiTone,
           aiLanguage,
           khadijaMode,
-          customApiKey,
         }),
       });
 
@@ -686,7 +806,6 @@ export default function Workspace() {
           aiTone,
           aiLanguage,
           khadijaMode,
-          customApiKey,
         }),
       });
 
@@ -1203,17 +1322,34 @@ export default function Workspace() {
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={handleGoogleLogin}
-                  className="flex-1 mr-2 px-3 py-1.5 rounded-lg border border-border-mute bg-surface hover:bg-background text-foreground text-[10px] font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    alt="Google"
-                    className="w-3.5 h-3.5"
-                  />
-                  Sign in with Google
-                </button>
+                <div className="flex-1 flex flex-col gap-1.5 mr-2">
+                  <button
+                    onClick={handleGoogleLogin}
+                    className="w-full px-3 py-1.5 rounded-lg border border-border-mute bg-surface hover:bg-background text-foreground text-[10px] font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <img
+                      src="https://www.svgrepo.com/show/475656/google-color.svg"
+                      alt="Google"
+                      className="w-3.5 h-3.5"
+                    />
+                    Sign in with Google
+                  </button>
+                  <div className="flex justify-between items-center px-1">
+                    <Link
+                      href="/login"
+                      className="text-[9px] text-text-muted hover:text-foreground font-semibold"
+                    >
+                      Sign in with Email
+                    </Link>
+                    <span className="text-[9px] text-zinc-300 dark:text-zinc-700">|</span>
+                    <Link
+                      href="/signup"
+                      className="text-[9px] text-text-muted hover:text-foreground font-semibold"
+                    >
+                      Create Account
+                    </Link>
+                  </div>
+                </div>
               )}
               <div className="flex items-center gap-0.5">
                 <button
@@ -1467,8 +1603,8 @@ export default function Workspace() {
             {/* Header */}
             <div className="px-6 py-4 border-b border-border-mute flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <h3 className="font-sans font-bold text-sm tracking-tight">Workspace Settings</h3>
+                <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="font-sans font-bold text-sm tracking-tight">Your Profile</h3>
               </div>
               <button
                 onClick={() => setShowSettings(false)}
@@ -1478,354 +1614,162 @@ export default function Workspace() {
               </button>
             </div>
 
-            {/* Tab Bar */}
-            <div className="flex border-b border-border-mute bg-background/50 px-4">
-              <button
-                onClick={() => setSettingsTab("profile")}
-                className={`px-4 py-3 text-xs font-medium border-b-2 transition-all cursor-pointer ${
-                  settingsTab === "profile"
-                    ? "border-emerald-500 text-foreground font-semibold"
-                    : "border-transparent text-text-muted hover:text-foreground"
-                }`}
-              >
-                👤 Profile
-              </button>
-              <button
-                onClick={() => setSettingsTab("ai")}
-                className={`px-4 py-3 text-xs font-medium border-b-2 transition-all cursor-pointer ${
-                  settingsTab === "ai"
-                    ? "border-emerald-500 text-foreground font-semibold"
-                    : "border-transparent text-text-muted hover:text-foreground"
-                }`}
-              >
-                🤖 AI Assistant
-              </button>
-              <button
-                onClick={() => setSettingsTab("security")}
-                className={`px-4 py-3 text-xs font-medium border-b-2 transition-all cursor-pointer ${
-                  settingsTab === "security"
-                    ? "border-emerald-500 text-foreground font-semibold"
-                    : "border-transparent text-text-muted hover:text-foreground"
-                }`}
-              >
-                🔒 Security & API
-              </button>
-            </div>
-
             {/* Content Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {settingsTab === "profile" && (
-                <div className="space-y-4 workspace-fade-in">
-                  {/* Google OAuth account connection status */}
-                  <div className="p-3 bg-background border border-border-mute rounded-xl flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src="https://www.svgrepo.com/show/475656/google-color.svg"
-                        alt="Google"
-                        className="w-4 h-4"
-                      />
-                      <div>
-                        <span className="text-xs font-bold block leading-none mb-1">Google Authentication</span>
-                        <span className="text-[9px] text-text-muted">
-                          {supabaseUser ? `Linked to ${supabaseUser.email}` : "Not connected"}
-                        </span>
-                      </div>
-                    </div>
-                    {supabaseUser ? (
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/15 border border-red-500/25 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
-                      >
-                        Disconnect
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleGoogleLogin}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
-                      >
-                        Connect Google
-                      </button>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                      placeholder="e.g. Bernard Blay"
+              <div className="space-y-4 workspace-fade-in">
+                {/* Google OAuth account connection status */}
+                <div className="p-3 bg-background border border-border-mute rounded-xl flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2.5">
+                    <img
+                      src="https://www.svgrepo.com/show/475656/google-color.svg"
+                      alt="Google"
+                      className="w-4 h-4"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        value={profileEmail}
-                        onChange={(e) => setProfileEmail(e.target.value)}
-                        className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                        placeholder="e.g. bblay@umat.edu.gh"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                        Phone Number
-                      </label>
-                      <input
-                        type="text"
-                        value={profilePhone}
-                        onChange={(e) => setProfilePhone(e.target.value)}
-                        className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                        placeholder="e.g. +233 55 123 4567"
-                      />
+                      <span className="text-xs font-bold block leading-none mb-1">Google Authentication</span>
+                      <span className="text-[9px] text-text-muted">
+                        {supabaseUser ? `Linked to ${supabaseUser.email}` : "Not connected"}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                        GitHub / Website
-                      </label>
-                      <input
-                        type="text"
-                        value={profileWebsite}
-                        onChange={(e) => setProfileWebsite(e.target.value)}
-                        className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                        placeholder="e.g. github.com/bernardblay"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                        Graduation Year
-                      </label>
-                      <input
-                        type="text"
-                        value={profileGradYear}
-                        onChange={(e) => setProfileGradYear(e.target.value)}
-                        className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                        placeholder="e.g. 2028"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                      Academic Institution
-                    </label>
-                    <input
-                      type="text"
-                      value={profileSchool}
-                      onChange={(e) => setProfileSchool(e.target.value)}
-                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                      placeholder="e.g. UMaT"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                      Course / Major
-                    </label>
-                    <input
-                      type="text"
-                      value={profileDegree}
-                      onChange={(e) => setProfileDegree(e.target.value)}
-                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                      placeholder="e.g. BSc Cybersecurity"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                      Target Career Aspiration
-                    </label>
-                    <input
-                      type="text"
-                      value={profileAspiration}
-                      onChange={(e) => setProfileAspiration(e.target.value)}
-                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
-                      placeholder="e.g. US Graduate School"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <input
-                      type="checkbox"
-                      id="adisadel"
-                      checked={profileAdisadel}
-                      onChange={(e) => setProfileAdisadel(e.target.checked)}
-                      className="h-4 w-4 rounded border-border-mute text-emerald-500 focus:ring-emerald-500 cursor-pointer"
-                    />
-                    <label htmlFor="adisadel" className="text-xs text-text-muted select-none cursor-pointer">
-                      Adisadel College Alum (Show designation badge)
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {settingsTab === "ai" && (
-                <div className="space-y-5 workspace-fade-in">
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-2">
-                      Assistant Response Tone
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: "cooperative", label: "🤝 Supportive", desc: "Friendly coach" },
-                        { id: "recruiter", label: "💼 Recruiter", desc: "Tough interviews" },
-                        { id: "auditor", label: "🔍 Security Auditor", desc: "Analytical facts" },
-                      ].map((t) => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setAiTone(t.id)}
-                          className={`p-2.5 rounded-lg border text-center cursor-pointer transition-all ${
-                            aiTone === t.id
-                              ? "border-emerald-500 bg-emerald-500/10 text-foreground"
-                              : "border-border-mute hover:border-zinc-400 bg-background text-text-muted"
-                          }`}
-                        >
-                          <span className="text-xs block font-bold">{t.label}</span>
-                          <span className="text-[9px] block opacity-85 mt-0.5">{t.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-2">
-                      Primary Language
-                    </label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[
-                        { id: "en", label: "English" },
-                        { id: "fr", label: "Français" },
-                        { id: "de", label: "Deutsch" },
-                        { id: "dar", label: "Moroccan (Darija)" },
-                      ].map((lang) => (
-                        <button
-                          key={lang.id}
-                          type="button"
-                          onClick={() => setAiLanguage(lang.id)}
-                          className={`p-2 rounded-lg border text-xs font-bold text-center cursor-pointer transition-all ${
-                            aiLanguage === lang.id
-                              ? "border-emerald-500 bg-emerald-500/10 text-foreground"
-                              : "border-border-mute hover:border-zinc-400 bg-background text-text-muted"
-                          }`}
-                        >
-                          {lang.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-2">
-                      Verification Strictness (Claims Auditing)
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: "low", label: "Relaxed", desc: "Fewer checks" },
-                        { id: "medium", label: "Balanced", desc: "Flag main gaps" },
-                        { id: "high", label: "Maximum (Cyber)", desc: "Audit every claim" },
-                      ].map((st) => (
-                        <button
-                          key={st.id}
-                          type="button"
-                          onClick={() => setAiStrictness(st.id)}
-                          className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
-                            aiStrictness === st.id
-                              ? "border-emerald-500 bg-emerald-500/10 text-foreground"
-                              : "border-border-mute hover:border-zinc-400 bg-background text-text-muted"
-                          }`}
-                        >
-                          <span className="text-xs block font-bold">{st.label}</span>
-                          <span className="text-[9px] block opacity-85 mt-0.5">{st.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-border-mute pt-4">
-                    <div className="flex items-start justify-between gap-4 p-3 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 border border-emerald-500/20 rounded-xl">
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                          💖 Khadija Partner Mode
-                        </span>
-                        <p className="text-[10px] text-text-muted leading-relaxed">
-                          Enables sweet motivational reminders and blessings in Moroccan French/Arabic during your tailoring sessions.
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={khadijaMode}
-                        onChange={(e) => setKhadijaMode(e.target.checked)}
-                        className="h-5 w-5 rounded border-emerald-300 text-emerald-500 focus:ring-emerald-500 cursor-pointer mt-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {settingsTab === "security" && (
-                <div className="space-y-4 workspace-fade-in">
-                  <div className="p-3 bg-background border border-border-mute rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                      <div>
-                        <span className="text-xs font-bold block">Local Encryption Active</span>
-                        <span className="text-[9px] text-text-muted font-mono">AES-256-GCM Secure Vault</span>
-                      </div>
-                    </div>
-                    <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
-                      VERIFIED
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                      Custom OpenAI / Foundry API Key
-                    </label>
-                    <input
-                      type="password"
-                      value={customApiKey}
-                      onChange={(e) => setCustomApiKey(e.target.value)}
-                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors font-mono"
-                      placeholder="sk-..."
-                    />
-                    <p className="text-[9px] text-text-muted mt-1 leading-normal">
-                      Leave empty to use shared academic server rates. Custom API key is encrypted and stored locally.
-                    </p>
-                  </div>
-
-                  <div className="border-t border-border-mute pt-4 space-y-2">
-                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block">
-                      Troubleshooting & Maintenance
-                    </label>
+                  {supabaseUser ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm("Are you sure you want to clear your current session history, parsed CV and target links? This cannot be undone.")) {
-                          localStorage.clear();
-                          window.location.reload();
-                        }
-                      }}
-                      className="w-full py-2 bg-red-500/10 hover:bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2"
+                      onClick={handleLogout}
+                      className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/15 border border-red-500/25 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Reset Workspace Database
+                      Disconnect
                     </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleGoogleLogin}
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
+                    >
+                      Connect Google
+                    </button>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                    placeholder="e.g. Bernard Blay"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="e.g. bblay@umat.edu.gh"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={profilePhone}
+                      onChange={(e) => setProfilePhone(e.target.value)}
+                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="e.g. +233 55 123 4567"
+                    />
                   </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                      GitHub / Website
+                    </label>
+                    <input
+                      type="text"
+                      value={profileWebsite}
+                      onChange={(e) => setProfileWebsite(e.target.value)}
+                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="e.g. github.com/bernardblay"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                      Graduation Year
+                    </label>
+                    <input
+                      type="text"
+                      value={profileGradYear}
+                      onChange={(e) => setProfileGradYear(e.target.value)}
+                      className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="e.g. 2028"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                    Academic Institution
+                  </label>
+                  <input
+                    type="text"
+                    value={profileSchool}
+                    onChange={(e) => setProfileSchool(e.target.value)}
+                    className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                    placeholder="e.g. UMaT"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                    Course / Major
+                  </label>
+                  <input
+                    type="text"
+                    value={profileDegree}
+                    onChange={(e) => setProfileDegree(e.target.value)}
+                    className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                    placeholder="e.g. BSc Cybersecurity"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
+                    Target Career Aspiration
+                  </label>
+                  <input
+                    type="text"
+                    value={profileAspiration}
+                    onChange={(e) => setProfileAspiration(e.target.value)}
+                    className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors"
+                    placeholder="e.g. US Graduate School"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <input
+                    type="checkbox"
+                    id="adisadel"
+                    checked={profileAdisadel}
+                    onChange={(e) => setProfileAdisadel(e.target.checked)}
+                    className="h-4 w-4 rounded border-border-mute text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="adisadel" className="text-xs text-text-muted select-none cursor-pointer">
+                    Adisadel College Alum (Show designation badge)
+                  </label>
+                </div>
+              </div>
             </div>
 
             {/* Footer actions */}

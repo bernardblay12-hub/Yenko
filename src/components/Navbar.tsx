@@ -4,16 +4,33 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
     const isDark = document.documentElement.classList.contains("dark");
     setTheme(isDark ? "dark" : "light");
+
+    if (!supabase) return;
+
+    // Get current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const toggleTheme = () => {
@@ -26,6 +43,13 @@ export default function Navbar() {
       localStorage.setItem("theme", "dark");
       setTheme("dark");
     }
+  };
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setUser(null);
+    toast.success("Signed out successfully.");
   };
 
   const navItems = [
@@ -85,18 +109,37 @@ export default function Navbar() {
             </button>
           )}
 
-          <Link
-            href="/workspace"
-            className="rounded border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-foreground"
-          >
-            Log In
-          </Link>
-          <Link
-            href="/workspace"
-            className="rounded bg-zinc-950 dark:bg-zinc-50 px-3.5 py-1.5 text-[11px] font-medium text-white dark:text-black transition-colors hover:bg-zinc-850 dark:hover:bg-zinc-200"
-          >
-            Get Started
-          </Link>
+          {mounted && user ? (
+            <>
+              <Link
+                href="/workspace"
+                className="rounded border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-foreground"
+              >
+                Workspace
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="rounded bg-zinc-950 dark:bg-zinc-50 px-3.5 py-1.5 text-[11px] font-medium text-white dark:text-black transition-colors hover:bg-zinc-850 dark:hover:bg-zinc-200 cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-foreground"
+              >
+                Log In
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded bg-zinc-950 dark:bg-zinc-50 px-3.5 py-1.5 text-[11px] font-medium text-white dark:text-black transition-colors hover:bg-zinc-850 dark:hover:bg-zinc-200"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

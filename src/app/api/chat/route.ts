@@ -24,10 +24,9 @@ export async function POST(req: NextRequest) {
       aiTone,
       aiLanguage,
       khadijaMode,
-      customApiKey,
     } = await req.json();
 
-    const apiKey = customApiKey || process.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     const baseURL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
 
     if (!apiKey) {
