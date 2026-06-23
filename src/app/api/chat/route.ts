@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.OPENAI_API_KEY;
     const baseURL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
+    const modelName = process.env.OPENAI_MODEL || "o3-mini";
 
     if (!apiKey) {
       // Fallback: Mock chat assistant response
@@ -115,7 +116,7 @@ Rules:
         method: "POST",
         headers: openaiHeaders,
         body: JSON.stringify({
-          model: "o3-mini",
+          model: modelName,
           messages: [
             { role: "developer", content: customSystemPrompt },
             { role: "user", content: prompt }
@@ -166,7 +167,7 @@ Let's start the tailoring. Please summarize the top 5 requirements and ask the f
         method: "POST",
         headers: openaiHeaders,
         body: JSON.stringify({
-          model: "o3-mini",
+          model: modelName,
           messages: apiMessages
         })
       });
