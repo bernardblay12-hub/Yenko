@@ -1792,14 +1792,14 @@ export default function Workspace() {
 
                   <div>
                     <label className="text-[10px] font-mono font-bold text-text-muted uppercase block mb-1">
-                      Custom Gemini API Key
+                      Custom OpenAI / Foundry API Key
                     </label>
                     <input
                       type="password"
                       value={customApiKey}
                       onChange={(e) => setCustomApiKey(e.target.value)}
                       className="w-full text-xs bg-background border border-border-mute rounded-lg px-3 py-2 outline-none focus:border-emerald-500 transition-colors font-mono"
-                      placeholder="AIzaSy..."
+                      placeholder="sk-..."
                     />
                     <p className="text-[9px] text-text-muted mt-1 leading-normal">
                       Leave empty to use shared academic server rates. Custom API key is encrypted and stored locally.

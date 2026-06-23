@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-// @ts-ignore
-import { GoogleGenAI } from "@google/genai";
 
 const SYSTEM_PROMPT = `You are ResuTailor, a resume tailoring assistant. Your job is to help the user tailor their CV to a specific job description honestly — without inventing experience they don't have.
 
@@ -29,7 +27,8 @@ export async function POST(req: NextRequest) {
       customApiKey,
     } = await req.json();
 
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY;
+    const apiKey = customApiKey || process.env.OPENAI_API_KEY;
+    const baseURL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
 
     if (!apiKey) {
       // Fallback: Mock chat assistant response
@@ -43,8 +42,6 @@ export async function POST(req: NextRequest) {
         khadijaMode,
       });
     }
-
-    const ai = new GoogleGenAI({ apiKey });
 
     // Build custom system instruction based on settings
     let customSystemPrompt = SYSTEM_PROMPT;
@@ -62,6 +59,11 @@ When the user provides their CV and a job description:
 ${khadijaMode ? `8. Khadija Mode is ENABLED. Since you are talking to Bernard, occasionally add supportive Moroccan Arabic/French phrases of encouragement like "Bon courage, bro" or "Dima Maghrib" or "Allah y3awnak", and maintain an extra warm, friendly tone as if you are his partner cheering him on.` : ""}
 ${khadijaMode ? "9. You may use warm emojis like 💖, ✨, 👍, 💪." : "8. Do NOT use emojis, icons, slang, or informal language in your responses. Always maintain a professional, objective, and executive tone throughout."}`;
     }
+
+    const openaiHeaders = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    };
 
     if (generateResume) {
       const prompt = `Based on this original CV text:
@@ -109,24 +111,36 @@ Rules:
 }
 5. Return ONLY the JSON object, without markdown formatting blocks like \`\`\`json.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-          systemInstruction: customSystemPrompt,
-          responseMimeType: "application/json",
-        },
+      // Call OpenAI / Foundry using Fetch
+      const response = await fetch(`${baseURL}/chat/completions`, {
+        method: "POST",
+        headers: openaiHeaders,
+        body: JSON.stringify({
+          model: "o3-mini",
+          messages: [
+            { role: "developer", content: customSystemPrompt },
+            { role: "user", content: prompt }
+          ],
+          response_format: { type: "json_object" }
+        })
       });
 
-      const responseText = response.text || "{}";
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenAI API generation failed: ${response.status} ${errText}`);
+      }
+
+      const resData = await response.json();
+      const responseText = resData.choices?.[0]?.message?.content || "{}";
       return NextResponse.json({ resume: JSON.parse(responseText.trim()) });
     } else {
       // Normal chat exchange
-      // Format messages for the Gemini SDK contents array
-      // Gemini expects role: "user" or "model"
-      const contents = [];
+      // Compile messages into OpenAI payload structure
+      const apiMessages = [
+        { role: "developer", content: customSystemPrompt }
+      ];
 
-      // Include CV and job context in the very first user message to establish context
+      // Add context to first message
       const firstMessageContent = `Here is my original CV:
 ---
 ${cvText}
@@ -137,31 +151,38 @@ ${jobText}
 ---
 Let's start the tailoring. Please summarize the top 5 requirements and ask the first clarifying question.`;
 
-      contents.push({ role: "user", parts: [{ text: firstMessageContent }] });
+      apiMessages.push({ role: "user", content: firstMessageContent });
 
-      // Append subsequent messages
-      // Skip the first user message if we already initialized with the prompt
+      // Append subsequent messages (skip the initial user placeholder)
       for (let i = 1; i < messages.length; i++) {
         const msg = messages[i];
-        contents.push({
-          role: msg.role === "assistant" ? "model" : "user",
-          parts: [{ text: msg.content }],
+        apiMessages.push({
+          role: msg.role === "assistant" || msg.role === "model" ? "assistant" : "user",
+          content: msg.content,
         });
       }
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: contents,
-        config: {
-          systemInstruction: customSystemPrompt,
-        },
+      // Call OpenAI / Foundry using Fetch
+      const response = await fetch(`${baseURL}/chat/completions`, {
+        method: "POST",
+        headers: openaiHeaders,
+        body: JSON.stringify({
+          model: "o3-mini",
+          messages: apiMessages
+        })
       });
 
-      return NextResponse.json({ reply: response.text });
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`OpenAI API chat failed: ${response.status} ${errText}`);
+      }
+
+      const resData = await response.json();
+      const reply = resData.choices?.[0]?.message?.content || "";
+      return NextResponse.json({ reply });
     }
   } catch (error: any) {
-    console.error("Gemini API Error, falling back to mock response:", error);
-    // If Gemini fails or keys are invalid, fall back to mock conversation so it remains robust
+    console.error("OpenAI API Error, falling back to mock response:", error);
     try {
       const body = await req.json().catch(() => ({}));
       return handleMockChat(body.messages || [], body.cvText || "", body.jobText || "", body.generateResume || false, {
