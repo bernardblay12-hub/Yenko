@@ -95,23 +95,47 @@ export default function WorkspacePage() {
 
   // ─── Auth & Profile Load ───
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }: { data: any }) => {
-      const session = data?.session;
+    let isMounted = true;
+
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
       if (!session) {
-        toast.error("Please sign in to access your dashboard.");
-        router.push("/login");
+        // If URL contains access_token hash, give Supabase 1s to parse hash session
+        if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+          setTimeout(async () => {
+            const { data: { session: delayedSession } } = await supabase.auth.getSession();
+            if (delayedSession && isMounted) {
+              initUserSession(delayedSession);
+            } else if (isMounted) {
+              toast.error("Please sign in to access your dashboard.");
+              router.push("/login");
+            }
+          }, 1000);
+          return;
+        }
+
+        if (isMounted) {
+          toast.error("Please sign in to access your dashboard.");
+          router.push("/login");
+        }
         return;
       }
 
+      if (isMounted) {
+        initUserSession(session);
+      }
+    };
+
+    const initUserSession = (session: any) => {
       const uid = session.user.id;
       setUserId(uid);
       setIsAuthChecking(false);
 
       // Load profile from database
-      supabase.from("profiles").select("*").eq("id", uid).maybeSingle().then(({ data }: { data: any }) => {
-        if (data) {
+      (supabase.from("profiles" as any) as any).select("*").eq("id", uid).maybeSingle().then(({ data }: { data: any }) => {
+        if (data && isMounted) {
           setUserProfile(data as Profile);
-          // Auto-redirect drivers to dedicated dashboard
           if (data.role === "driver") {
             router.push("/workspace/driver");
             return;
@@ -119,9 +143,21 @@ export default function WorkspacePage() {
         }
       });
 
-      // Load trips
       fetchTrips(uid);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((_event: any, session: any) => {
+      if (session && isMounted) {
+        initUserSession(session);
+      }
     });
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
   }, [router]);
 
   // ─── Supabase Realtime Trip Subscription ───

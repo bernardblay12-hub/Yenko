@@ -12,8 +12,7 @@ export function useRealtimeTrips(userId: string) {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("trips")
+      const { data, error } = await (supabase.from("trips" as any) as any)
         .select("*")
         .or(`rider_id.eq.${userId},driver_id.eq.${userId}`)
         .order("created_at", { ascending: false });
@@ -42,7 +41,7 @@ export function useRealtimeTrips(userId: string) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "trips" },
-        (payload) => {
+        (payload: any) => {
           const newTrip = payload.new as Trip | null;
           const oldTrip = payload.old as Trip | null;
 

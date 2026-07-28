@@ -106,7 +106,7 @@ export function useDriverPresence(profile: Profile | null) {
         setOnlineDrivers(driversCount);
         setDriverLocations(locations);
       })
-      .subscribe(async (status) => {
+      .subscribe(async (status: any) => {
         if (status === "SUBSCRIBED" && isAvailable && isDriver && profile) {
           // If already marked available in local state when reconnecting
           if ("geolocation" in navigator) {
