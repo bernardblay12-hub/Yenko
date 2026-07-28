@@ -1,9 +1,7 @@
 -- ========================================================
 -- Yɛnkɔ (Campus Ride & Delivery System for Students)
 -- Supabase PostgreSQL Database Schema
--- Project Reference: xzldfxvkjmgkiwhjesoe
--- Copy & paste into your Supabase SQL Editor:
--- https://supabase.com/dashboard/project/xzldfxvkjmgkiwhjesoe/sql/new
+-- Copy & paste this script into your Supabase SQL Editor
 -- ========================================================
 
 -- Enable UUID extension

@@ -43,13 +43,13 @@ npm install
 Configure `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://xzldfxvkjmgkiwhjesoe.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### 3. Database Setup
 
-Copy and execute the schema defined in `SUPABASE_SCHEMA.sql` inside your [Supabase SQL Editor](https://supabase.com/dashboard/project/xzldfxvkjmgkiwhjesoe/sql/new).
+Copy and execute the schema defined in `SUPABASE_SCHEMA.sql` inside your Supabase SQL Editor.
 
 ### 4. Run Development Server
 
