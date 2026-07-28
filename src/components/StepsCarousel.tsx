@@ -67,7 +67,9 @@ export default function StepsCarousel() {
       {/* ─── Desktop & Tablet Layout (3-Column Interactive Grid) ─── */}
       <div className="hidden md:grid md:grid-cols-3 gap-6 relative">
         {/* Connecting line behind step cards */}
-        <div className="absolute top-12 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-emerald-500/30 via-teal-500/30 to-amber-500/30 -z-0" />
+        <div className="absolute top-12 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-emerald-500/40 via-teal-500/40 to-amber-500/40 -z-0 overflow-hidden">
+          <div className="w-full h-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-beam" />
+        </div>
 
         {steps.map((step, idx) => {
           const Icon = step.icon;
@@ -76,32 +78,36 @@ export default function StepsCarousel() {
           return (
             <motion.div
               key={idx}
-              whileHover={{ y: -4 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.15, duration: 0.5 }}
+              whileHover={{ y: -6, scale: 1.02 }}
               onClick={() => {
                 setActiveIndex(idx);
                 handleUserInteraction();
               }}
               className={`relative z-10 p-6 rounded-2xl bg-surface border transition-all duration-300 cursor-pointer flex flex-col justify-between h-full shadow-xs group ${
                 isActive
-                  ? "border-emerald-500/60 ring-2 ring-emerald-500/20 shadow-md"
-                  : "border-border-mute hover:border-emerald-500/30"
+                  ? "border-emerald-500/70 ring-2 ring-emerald-500/25 shadow-lg shadow-emerald-500/10 glow-active"
+                  : "border-border-mute hover:border-emerald-500/40 hover:shadow-md"
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-5">
-                  <div className={`p-3 rounded-xl border ${step.badgeColor} shadow-xs`}>
+                  <div className={`p-3 rounded-xl border ${step.badgeColor} shadow-xs group-hover:scale-110 transition-transform duration-300`}>
                     <Icon className="w-5 h-5 stroke-[2.25]" />
                   </div>
-                  <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${
+                  <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border transition-colors ${
                     isActive
-                      ? "bg-emerald-500 text-white border-emerald-500"
-                      : "bg-background text-text-muted border-border-mute"
+                      ? "bg-emerald-500 text-white border-emerald-500 shadow-xs animate-pulse"
+                      : "bg-background text-text-muted border-border-mute group-hover:border-emerald-500/30"
                   }`}>
                     Step {step.step}
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-foreground tracking-tight mb-2">
+                <h3 className="text-base font-bold text-foreground tracking-tight mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                   {step.title}
                 </h3>
                 <p className="text-xs text-text-muted leading-relaxed">
@@ -110,7 +116,7 @@ export default function StepsCarousel() {
               </div>
 
               {idx < steps.length - 1 && (
-                <div className="hidden lg:flex items-center gap-1 text-[11px] font-mono text-emerald-500/70 font-semibold mt-4">
+                <div className="hidden lg:flex items-center gap-1 text-[11px] font-mono text-emerald-500/80 font-semibold mt-4 group-hover:translate-x-1 transition-transform">
                   <span>Next Step</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>

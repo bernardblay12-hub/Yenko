@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StepsCarousel from "@/components/StepsCarousel";
@@ -46,35 +47,51 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const errorDesc = urlParams.get("error_description") || hashParams.get("error_description");
+      const error = urlParams.get("error") || hashParams.get("error");
+
+      if (error || errorDesc) {
+        toast.error("Google authentication error: Unable to exchange OAuth code. Please sign in with Email/Password or verify Supabase OAuth settings.", {
+          duration: 6000,
+        });
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
   }, []);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden text-foreground font-sans animate-fade-in">
       {/* ─── SmartStudy Square Grid Mesh Backing ─── */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,185,129,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.06)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,185,129,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.08)_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
       
       {/* ─── Ambient Concentric Cyber-Rings (Tarkwa Live Driver Radar) ─── */}
-      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[45rem] h-[45rem] rounded-full border border-emerald-500/15 pointer-events-none hidden lg:block" />
-      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] rounded-full border border-emerald-500/12 border-dashed pointer-events-none animate-[spin_120s_linear_infinite] hidden lg:block" />
-      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[18rem] h-[18rem] rounded-full border border-teal-500/20 pointer-events-none hidden lg:block" />
+      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[48rem] h-[48rem] rounded-full border border-emerald-500/20 pointer-events-none hidden lg:block animate-pulse" />
+      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] rounded-full border border-emerald-500/15 border-dashed pointer-events-none animate-[spin_90s_linear_infinite] hidden lg:block" />
+      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[20rem] h-[20rem] rounded-full border border-teal-500/25 pointer-events-none hidden lg:block" />
 
-      {/* ─── Floating Cyber-Hexagon Outlines ─── */}
-      <svg className="absolute top-[16%] left-[6%] w-24 h-28 text-emerald-500/20 pointer-events-none animate-[pulse_6s_ease-in-out_infinite] hidden lg:block" viewBox="0 0 100 115" fill="none">
+      {/* ─── Floating Cyber-Hexagon & Vector Nodes ─── */}
+      <svg className="absolute top-[14%] left-[5%] w-28 h-32 text-emerald-500/25 pointer-events-none animate-orb-slow hidden lg:block" viewBox="0 0 100 115" fill="none">
         <polygon points="50,2 98,30 98,85 50,113 2,85 2,30" stroke="currentColor" strokeWidth="1.5" />
       </svg>
-      <svg className="absolute top-[50%] right-[6%] w-32 h-36 text-teal-500/18 pointer-events-none animate-[pulse_8s_ease-in-out_infinite] hidden lg:block" viewBox="0 0 100 115" fill="none">
+      <svg className="absolute top-[48%] right-[5%] w-36 h-40 text-teal-500/22 pointer-events-none animate-orb-reverse hidden lg:block" viewBox="0 0 100 115" fill="none">
         <polygon points="50,2 98,30 98,85 50,113 2,85 2,30" stroke="currentColor" strokeWidth="1.2" strokeDasharray="4 4" />
       </svg>
 
-      {/* ─── Floating Gradient Glow Orbs ─── */}
-      <div className="absolute top-[4%] left-[-10%] w-[38rem] h-[38rem] rounded-full bg-emerald-500/10 blur-[130px] pointer-events-none" />
-      <div className="absolute top-[22%] right-[-10%] w-[32rem] h-[32rem] rounded-full bg-teal-500/10 blur-[110px] pointer-events-none" />
-      <div className="absolute bottom-[20%] left-[-5%] w-[30rem] h-[30rem] rounded-full bg-emerald-500/8 blur-[120px] pointer-events-none" />
+      {/* ─── Floating Gradient Glow Orbs (Multi-Color Layering) ─── */}
+      <div className="absolute top-[2%] left-[-8%] w-[42rem] h-[42rem] rounded-full bg-emerald-500/15 blur-[140px] pointer-events-none animate-orb-slow" />
+      <div className="absolute top-[20%] right-[-8%] w-[38rem] h-[38rem] rounded-full bg-teal-500/15 blur-[120px] pointer-events-none animate-orb-reverse" />
+      <div className="absolute top-[50%] left-[20%] w-[32rem] h-[32rem] rounded-full bg-indigo-500/10 blur-[130px] pointer-events-none animate-orb-slow" />
+      <div className="absolute bottom-[10%] right-[10%] w-[35rem] h-[35rem] rounded-full bg-emerald-500/12 blur-[130px] pointer-events-none animate-orb-reverse" />
       
-      {/* ─── Designer Light Streaks / Glowing Beams ─── */}
-      <div className="absolute top-[8%] left-[-20%] w-[80rem] h-[10rem] -rotate-12 bg-gradient-to-r from-transparent via-emerald-500/12 to-transparent blur-[80px] pointer-events-none" />
-      <div className="absolute top-[32%] right-[-30%] w-[70rem] h-[25rem] -rotate-[35deg] bg-gradient-to-r from-transparent via-emerald-600/20 to-transparent blur-[100px] pointer-events-none" />
-      <div className="absolute top-[62%] left-[-10%] w-[90rem] h-[22rem] rotate-15 bg-gradient-to-r from-transparent via-teal-500/18 to-transparent blur-[90px] pointer-events-none" />
+      {/* ─── Laser Beams & Animated Transit Corridors ─── */}
+      <div className="absolute top-[8%] left-[-20%] w-[85rem] h-[12rem] -rotate-12 bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent blur-[70px] pointer-events-none" />
+      <div className="absolute top-[34%] right-[-30%] w-[75rem] h-[28rem] -rotate-[35deg] bg-gradient-to-r from-transparent via-emerald-600/25 to-transparent blur-[90px] pointer-events-none" />
+      <div className="absolute top-[65%] left-[-10%] w-[95rem] h-[25rem] rotate-15 bg-gradient-to-r from-transparent via-teal-500/20 to-transparent blur-[85px] pointer-events-none" />
       
       {/* ─── Glowing Spline Wave Curves (Campus Transit Corridors) ─── */}
       <div className="absolute top-[18%] left-0 w-full h-[600px] pointer-events-none overflow-hidden opacity-90">
@@ -133,15 +150,6 @@ export default function Home() {
         <main>
           {/* ─── 1. Hero Area ─── */}
           <section className="pt-24 md:pt-36 pb-20 md:pb-28 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
-            {/* Beacon Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 mb-6 backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              UMaT Tarkwa Campus Transport & Logistics
-            </div>
-
             <h1 className="max-w-3xl font-sans text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.15]">
               Navigate Campus Fast.<br />
               <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 bg-clip-text text-transparent">

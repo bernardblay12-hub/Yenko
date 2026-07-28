@@ -186,6 +186,48 @@ body {
   animation: mobile-menu-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ═══ RICH AMBIENT ANIMATIONS & GRID MESH ═══ */
+
+/* Slow float animation for ambient background orbs */
+@keyframes orb-float-slow {
+  0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
+  50% { transform: translateY(-28px) scale(1.08) rotate(6deg); }
+}
+
+@keyframes orb-float-reverse {
+  0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
+  50% { transform: translateY(24px) scale(0.92) rotate(-6deg); }
+}
+
+.animate-orb-slow {
+  animation: orb-float-slow 14s ease-in-out infinite;
+}
+
+.animate-orb-reverse {
+  animation: orb-float-reverse 18s ease-in-out infinite;
+}
+
+/* Horizontal Laser Beam Sweep */
+@keyframes beam-sweep {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 0.7; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+.animate-beam {
+  animation: beam-sweep 9s ease-in-out infinite;
+}
+
+/* Pulse Glow Effect for Cards & Icons */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.35); }
+}
+
+.glow-active {
+  animation: glow-pulse 3.5s ease-in-out infinite;
+}
+
 
 /* Print layout optimizations for A4 Export */
 @media print {

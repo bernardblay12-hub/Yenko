@@ -20,6 +20,20 @@ export default function LoginPage() {
 
   // If already logged in, redirect to workspace
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const errorDesc = urlParams.get("error_description") || hashParams.get("error_description");
+      const error = urlParams.get("error") || hashParams.get("error");
+
+      if (error || errorDesc) {
+        toast.error("Google authentication error: Unable to exchange OAuth code. Please sign in with Email/Password or check Supabase OAuth settings.", {
+          duration: 6000,
+        });
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+
     if (!supabase) return;
     supabase.auth.getSession().then((res) => {
       if (res.data?.session) {
