@@ -22,6 +22,7 @@ import {
   Check
 } from "lucide-react";
 import { supabase, UMAT_CAMPUS_HOTSPOTS } from "@/lib/supabase";
+import { MtnMoMoLogo, TelecelLogo } from "@/components/BrandIcons";
 import { toast } from "sonner";
 
 export default function WorkspacePage() {
@@ -390,7 +391,10 @@ export default function WorkspacePage() {
                           : "border-border-mute bg-background text-text-muted"
                       }`}
                     >
-                      <CreditCard className="h-4 w-4" />
+                      <div className="flex -space-x-1">
+                        <MtnMoMoLogo className="h-4 w-4" />
+                        <TelecelLogo className="h-4 w-4" />
+                      </div>
                       <span className="text-xs font-medium text-foreground">MTN / Telecel MoMo</span>
                     </button>
                     <button

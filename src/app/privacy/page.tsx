@@ -15,41 +15,41 @@ export default function PrivacyPolicy() {
 
         <div className="space-y-6 text-xs text-text-muted leading-relaxed">
           <p>
-            At ResuTailor, we prioritize your data sovereignty and privacy. This Privacy Policy details how we collect, process, and protect your information.
+            At Yɛnkɔ, we prioritize your data sovereignty, location privacy, and security. This Privacy Policy details how we handle ride bookings, delivery locations, and user account information across UMaT Tarkwa.
           </p>
 
           <section className="space-y-2">
-            <h2 className="text-sm font-bold text-foreground font-sans">1. Metadata Stripping & PDF Parsing</h2>
+            <h2 className="text-sm font-bold text-foreground font-sans">1. Geolocation & Campus Hotspot Telemetry</h2>
             <p>
-              When you upload a CV or resume document, we parse the raw text to extract professional backgrounds. Any document metadata (author names, timestamps, software version tags) is stripped automatically to ensure anonymity.
+              When you request a campus ride or parcel delivery, we use designated UMaT campus landmarks and optional device GPS to estimate driver arrival times and calculate upfront fares. Location data is never tracked continuously in the background outside active trip sessions.
             </p>
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-sm font-bold text-foreground font-sans">2. Client-Side Data Sovereignty</h2>
+            <h2 className="text-sm font-bold text-foreground font-sans">2. Local Session & Offline Sovereignty</h2>
             <p>
-              We use secure client-side storage mechanisms (such as LocalStorage fallbacks) to save resume logs, profile settings, and customized audit configurations. You maintain absolute control over the export and deletion of this data directly from your browser settings.
+              We utilize secure client-side storage mechanisms to save active dispatch requests, rider preferences, and profile credentials locally. This ensures your app operates smoothly even during network dips.
             </p>
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-sm font-bold text-foreground font-sans">3. Secure Authentication</h2>
+            <h2 className="text-sm font-bold text-foreground font-sans">3. Secure Authentication & Verification</h2>
             <p>
-              For users who choose to create an account, authentications and profile syncs are managed securely. We utilize strict Row Level Security (RLS) policies to guarantee that your profile records are queryable only by your authenticated session.
+              For student riders and driver partners, authentications are managed via Supabase Auth with strict Row Level Security (RLS) policies. Your trip history and profile records are queryable only by your authenticated session.
             </p>
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-sm font-bold text-foreground font-sans">4. No Data Reselling</h2>
+            <h2 className="text-sm font-bold text-foreground font-sans">4. No Third-Party Data Selling</h2>
             <p>
-              We do not sell, rent, or lease your resumes, profiles, or queries to third-party advertisers, recruiters, or data brokers. All data processed is strictly used to customize and print your A4 resume files.
+              We do not sell, rent, or lease student contact numbers, trip logs, or hostel address details to third-party advertisers or data brokers. All telemetry is strictly used to match verified campus riders with drivers.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-sm font-bold text-foreground font-sans">5. Contact Information</h2>
             <p>
-              For questions regarding your data privacy, you can reach out to our team at support@resutailor.app.
+              For questions regarding your data privacy, you can reach out to our team at support@yenko.app.
             </p>
           </section>
         </div>

@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Mail, Lock, User, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { GoogleLogo } from "@/components/BrandIcons";
+import Logo from "@/components/Logo";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -84,18 +86,21 @@ export default function SignUpPage() {
       return;
     }
     setIsGoogleLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: typeof window !== "undefined" ? window.location.origin + "/workspace" : "",
-        queryParams: {
-          client_id: "696756760553-4lus6v4geqt91tlhgb574lop5ks2fou0.apps.googleusercontent.com"
-        }
-      },
-    });
+    try {
+      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/workspace` : "";
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
 
-    if (error) {
-      toast.error("Google login failed: " + error.message);
+      if (error) {
+        toast.error("Google login failed: " + error.message);
+        setIsGoogleLoading(false);
+      }
+    } catch (err: any) {
+      toast.error("Google login error: " + (err.message || "Failed to connect"));
       setIsGoogleLoading(false);
     }
   };
@@ -119,23 +124,11 @@ export default function SignUpPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-6">
         {/* Branding Logo */}
         <div className="flex justify-center mb-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/logo.png"
-              alt="ResuTailor Logo"
-              className="h-8 w-8 object-contain rounded border border-zinc-200 dark:border-zinc-800"
-            />
-            <span className="font-sans font-bold tracking-tight text-foreground text-lg">
-              resu<span className="text-zinc-400 font-normal">tailor</span>
-            </span>
-          </Link>
+          <Logo size="lg" />
         </div>
         <h2 className="text-center text-xl font-bold tracking-tight text-foreground font-sans">
           Create a new account
         </h2>
-        <p className="mt-2 text-center text-xs text-text-muted">
-          Save your tailored resumes and sync your settings to the cloud.
-        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
@@ -276,11 +269,7 @@ export default function SignUpPage() {
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <>
-                    <img
-                      src="https://www.svgrepo.com/show/475656/google-color.svg"
-                      alt="Google logo"
-                      className="h-4 w-4"
-                    />
+                    <GoogleLogo className="h-4 w-4" />
                     Register with Google
                   </>
                 )}

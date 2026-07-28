@@ -7,6 +7,8 @@ import { Sun, Moon, Menu, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
+import Logo from "@/components/Logo";
+
 export default function Navbar() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -70,19 +72,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-6xl w-full bg-transparent border-0 rounded-none shadow-none md:border md:border-border-mute md:bg-background/80 md:dark:bg-surface/80 md:backdrop-blur-md md:rounded-2xl md:shadow-[0_8px_30px_rgb(0,0,0,0.02)] md:dark:shadow-[0_8px_30px_rgb(0,0,0,0.15)] transition-all duration-300">
         <div className="flex h-14 items-center justify-between px-6">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="h-8 w-8 rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center font-bold text-base shadow-sm transition-transform duration-300 group-hover:scale-105">
-              Yɛ
-            </div>
-            <div className="flex flex-col">
-              <span className="font-sans font-extrabold tracking-tight text-foreground text-base leading-tight">
-                Yɛnkɔ<span className="text-emerald-600 dark:text-emerald-500 font-normal">.app</span>
-              </span>
-              <span className="text-[9px] uppercase font-mono tracking-wider text-text-muted leading-none">
-                Campus Ride & Delivery
-              </span>
-            </div>
-          </Link>
+          <Logo href="/" size="md" />
 
           {/* Navigation Items (Desktop) */}
           <nav className="hidden md:flex items-center gap-1.5">

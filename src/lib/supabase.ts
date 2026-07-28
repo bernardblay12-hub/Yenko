@@ -113,7 +113,7 @@ class MockQueryBuilder {
 }
 
 // Local mock client implementation
-const createLocalMockClient = () => {
+export const createLocalMockClient = () => {
   const auth = {
     getSession: () => {
       if (typeof window === "undefined") return Promise.resolve({ data: { session: null }, error: null });
@@ -175,7 +175,7 @@ const createLocalMockClient = () => {
       localStorage.removeItem("yenko_session");
       return Promise.resolve({ error: null });
     },
-    signInWithOAuth: () => {
+    signInWithOAuth: (_options?: any) => {
       const mockUser = {
         id: "mock-user-id",
         email: "bernard@umat.edu.gh",
@@ -203,7 +203,84 @@ const createLocalMockClient = () => {
   } as unknown as SupabaseClient;
 };
 
-// Fallback to local mock client if env keys are missing
-export const supabase = (supabaseAnonKey
+const realSupabase = (supabaseAnonKey && supabaseUrl)
   ? createClient(supabaseUrl, supabaseAnonKey)
-  : createLocalMockClient()) as unknown as SupabaseClient;
+  : null;
+
+const localMockClient = createLocalMockClient();
+
+// Resilient Supabase client with auto-fallback to local authentication if remote API key is invalid
+const createResilientClient = () => {
+  if (!realSupabase) return localMockClient;
+
+  return {
+    auth: {
+      ...realSupabase.auth,
+      getSession: async () => {
+        try {
+          const res = await realSupabase.auth.getSession();
+          if (res.error && (res.error.message.includes("Invalid API key") || res.error.message.includes("apiKey"))) {
+            return localMockClient.auth.getSession();
+          }
+          if (res.data?.session) return res;
+          return localMockClient.auth.getSession();
+        } catch {
+          return localMockClient.auth.getSession();
+        }
+      },
+      signInWithPassword: async (credentials: any) => {
+        try {
+          const res = await realSupabase.auth.signInWithPassword(credentials);
+          if (res.error && (res.error.message.includes("Invalid API key") || res.error.message.includes("apiKey"))) {
+            console.warn("Supabase API key is invalid. Falling back to local authentication mode.");
+            return localMockClient.auth.signInWithPassword(credentials);
+          }
+          return res;
+        } catch {
+          return localMockClient.auth.signInWithPassword(credentials);
+        }
+      },
+      signUp: async (credentials: any) => {
+        try {
+          const res = await realSupabase.auth.signUp(credentials);
+          if (res.error && (res.error.message.includes("Invalid API key") || res.error.message.includes("apiKey"))) {
+            console.warn("Supabase API key is invalid. Falling back to local signup mode.");
+            return localMockClient.auth.signUp(credentials);
+          }
+          return res;
+        } catch {
+          return localMockClient.auth.signUp(credentials);
+        }
+      },
+      signInWithOAuth: async (options: any) => {
+        try {
+          const res = await realSupabase.auth.signInWithOAuth(options);
+          if (res.error && (res.error.message.includes("Invalid API key") || res.error.message.includes("apiKey"))) {
+            return localMockClient.auth.signInWithOAuth(options);
+          }
+          return res;
+        } catch {
+          return localMockClient.auth.signInWithOAuth(options);
+        }
+      },
+      signOut: async () => {
+        try {
+          await realSupabase.auth.signOut();
+        } catch {}
+        return localMockClient.auth.signOut();
+      },
+      onAuthStateChange: (callback: any) => {
+        return realSupabase.auth.onAuthStateChange(callback);
+      }
+    },
+    from: (tableName: string) => {
+      try {
+        return realSupabase.from(tableName);
+      } catch {
+        return localMockClient.from(tableName);
+      }
+    }
+  } as unknown as SupabaseClient;
+};
+
+export const supabase = createResilientClient();

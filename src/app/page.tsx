@@ -1,89 +1,140 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import StepsCarousel from "@/components/StepsCarousel";
 import { 
   ArrowRight, 
   Car, 
   Bus, 
   Bike, 
   Package, 
-  MapPin, 
-  Clock, 
   ShieldCheck, 
-  Smartphone, 
   CheckCircle2,
   Navigation,
   Zap,
-  Coffee
+  Coffee,
+  Star,
+  UserCheck,
+  Check,
+  MapPin,
+  Clock,
+  Smartphone
 } from "lucide-react";
 import { UMAT_CAMPUS_HOTSPOTS } from "@/lib/supabase";
+import { 
+  MtnMoMoLogo, 
+  TelecelLogo, 
+  PaystackLogo, 
+  GoogleMapsLogo,
+  UMaTCrestLogo 
+} from "@/components/BrandIcons";
 
-/* ─── Scroll Reveal Hook ─── */
-function useScrollReveal() {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = ref.current;
-    if (!container) return;
-
-    const targets = container.querySelectorAll(
-      ".reveal, .reveal-fade, .reveal-scale"
-    );
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -20px 0px" }
-    );
-
-    targets.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
-  return ref;
-}
+const FEATURE_CARDS = [
+  { Icon: Car, title: 'Instant Campus Rides', desc: 'Direct rides between UMaT hostels, laboratories, lecture faculties, and Tarkwa town.' },
+  { Icon: Package, title: 'Hostel Parcel Delivery', desc: 'Order canteen meals, books, or laundry delivered direct to your hostel room.' },
+  { Icon: ShieldCheck, title: '4-Digit OTP PIN Security', desc: 'Every ride requires a unique security PIN verification before the trip starts.' },
+  { Icon: Navigation, title: 'Pre-Mapped Hotspots', desc: 'Designated campus pickup nodes for instant driver matching and zero GPS confusion.' },
+  { Icon: Smartphone, title: 'MoMo & Cash Payments', desc: 'Upfront student-friendly fares paid via MTN Mobile Money, Telecel Cash, or Cash.' },
+  { Icon: UserCheck, title: 'Verified Campus Drivers', desc: '100% ID-cleared student & campus partners for maximum safety day and night.' },
+];
 
 export default function Home() {
-  const scrollRef = useScrollReveal();
-  
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <div ref={scrollRef} className="flex flex-col min-h-screen bg-background bg-[linear-gradient(to_right,rgba(120,120,120,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(120,120,120,0.03)_1px,transparent_1px)] bg-[size:32px_32px] text-foreground font-sans animate-fade-in">
-      <Navbar />
+    <div className="min-h-screen bg-background relative overflow-hidden text-foreground font-sans animate-fade-in">
+      {/* ─── SmartStudy Square Grid Mesh Backing ─── */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,185,129,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.06)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+      
+      {/* ─── Ambient Concentric Cyber-Rings (Tarkwa Live Driver Radar) ─── */}
+      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[45rem] h-[45rem] rounded-full border border-emerald-500/15 pointer-events-none hidden lg:block" />
+      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] rounded-full border border-emerald-500/12 border-dashed pointer-events-none animate-[spin_120s_linear_infinite] hidden lg:block" />
+      <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[18rem] h-[18rem] rounded-full border border-teal-500/20 pointer-events-none hidden lg:block" />
 
-      <main className="flex-1">
-        {/* ─── 1. Hero Area ─── */}
-        <section className="relative border-b border-border-mute bg-background/30 py-20 md:py-28 overflow-hidden">
-          {/* Floating gradient background elements */}
-          <div
-            className="hero-orb"
-            style={{
-              width: 500, height: 500,
-              background: "radial-gradient(circle, #059669 0%, transparent 70%)",
-              top: "-15%", left: "10%",
-            }}
-          />
-          <div
-            className="hero-orb"
-            style={{
-              width: 400, height: 400,
-              background: "radial-gradient(circle, #0284c7 0%, transparent 70%)",
-              bottom: "-10%", right: "5%",
-              animationDelay: "4s",
-            }}
-          />
+      {/* ─── Floating Cyber-Hexagon Outlines ─── */}
+      <svg className="absolute top-[16%] left-[6%] w-24 h-28 text-emerald-500/20 pointer-events-none animate-[pulse_6s_ease-in-out_infinite] hidden lg:block" viewBox="0 0 100 115" fill="none">
+        <polygon points="50,2 98,30 98,85 50,113 2,85 2,30" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+      <svg className="absolute top-[50%] right-[6%] w-32 h-36 text-teal-500/18 pointer-events-none animate-[pulse_8s_ease-in-out_infinite] hidden lg:block" viewBox="0 0 100 115" fill="none">
+        <polygon points="50,2 98,30 98,85 50,113 2,85 2,30" stroke="currentColor" strokeWidth="1.2" strokeDasharray="4 4" />
+      </svg>
 
-          <div className="relative mx-auto max-w-7xl px-6 flex flex-col items-center text-center">
-            {/* Monospace Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 mb-6">
+      {/* ─── Floating Gradient Glow Orbs ─── */}
+      <div className="absolute top-[4%] left-[-10%] w-[38rem] h-[38rem] rounded-full bg-emerald-500/10 blur-[130px] pointer-events-none" />
+      <div className="absolute top-[22%] right-[-10%] w-[32rem] h-[32rem] rounded-full bg-teal-500/10 blur-[110px] pointer-events-none" />
+      <div className="absolute bottom-[20%] left-[-5%] w-[30rem] h-[30rem] rounded-full bg-emerald-500/8 blur-[120px] pointer-events-none" />
+      
+      {/* ─── Designer Light Streaks / Glowing Beams ─── */}
+      <div className="absolute top-[8%] left-[-20%] w-[80rem] h-[10rem] -rotate-12 bg-gradient-to-r from-transparent via-emerald-500/12 to-transparent blur-[80px] pointer-events-none" />
+      <div className="absolute top-[32%] right-[-30%] w-[70rem] h-[25rem] -rotate-[35deg] bg-gradient-to-r from-transparent via-emerald-600/20 to-transparent blur-[100px] pointer-events-none" />
+      <div className="absolute top-[62%] left-[-10%] w-[90rem] h-[22rem] rotate-15 bg-gradient-to-r from-transparent via-teal-500/18 to-transparent blur-[90px] pointer-events-none" />
+      
+      {/* ─── Glowing Spline Wave Curves (Campus Transit Corridors) ─── */}
+      <div className="absolute top-[18%] left-0 w-full h-[600px] pointer-events-none overflow-hidden opacity-90">
+        <svg className="w-full h-full" viewBox="0 0 1440 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M-100 150 C 300 50, 600 450, 1000 250 C 1200 150, 1400 350, 1600 300"
+            stroke="url(#spline-grad-1)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            className="animate-[pulse_8s_ease-in-out_infinite]"
+          />
+          <path
+            d="M-50 200 C 350 120, 550 380, 950 320 C 1150 280, 1350 420, 1550 380"
+            stroke="url(#spline-grad-2)"
+            strokeWidth="2"
+            strokeDasharray="6 6"
+            strokeLinecap="round"
+          />
+          <defs>
+            <linearGradient id="spline-grad-1" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+              <stop offset="30%" stopColor="#10b981" stopOpacity="0.38" />
+              <stop offset="70%" stopColor="#059669" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#059669" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="spline-grad-2" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#059669" stopOpacity="0" />
+              <stop offset="25%" stopColor="#059669" stopOpacity="0.28" />
+              <stop offset="75%" stopColor="#10b981" stopOpacity="0.32" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      {/* ─── UMaT Constellation Data Nodes (Goldfields, KT Hall, FOE, Town) ─── */}
+      <div className="absolute top-[26%] left-[3%] w-52 h-52 pointer-events-none hidden lg:block opacity-90">
+        <svg className="w-full h-full text-emerald-500/35" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="15" y1="20" x2="45" y2="35" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="45" y1="35" x2="30" y2="70" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="30" y1="70" x2="75" y2="55" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="45" y1="35" x2="75" y2="55" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 3" />
+          <line x1="75" y1="55" x2="85" y2="15" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 3" />
+          
+          <circle cx="15" cy="20" r="3.5" fill="#10b981" className="animate-[pulse_3s_infinite]" />
+          <circle cx="45" cy="35" r="5" fill="#059669" className="animate-[pulse_4s_infinite]" />
+          <circle cx="30" cy="70" r="4" fill="#10b981" className="animate-[pulse_2s_infinite]" />
+          <circle cx="75" cy="55" r="4.5" fill="#059669" className="animate-[pulse_5s_infinite]" />
+          <circle cx="85" cy="15" r="3" fill="#10b981" className="animate-[pulse_3.5s_infinite]" />
+        </svg>
+      </div>
+
+      <div className="relative z-10">
+        <Navbar />
+
+        <main>
+          {/* ─── 1. Hero Area ─── */}
+          <section className="pt-24 md:pt-36 pb-20 md:pb-28 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
+            {/* Beacon Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 mb-6 backdrop-blur-md">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -91,278 +142,457 @@ export default function Home() {
               UMaT Tarkwa Campus Transport & Logistics
             </div>
 
-            <h1 className="max-w-4xl font-sans text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-foreground leading-[1.1] transition-transform duration-500 hover:scale-[1.01]">
+            <h1 className="max-w-3xl font-sans text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.15]">
               Navigate Campus Fast.<br />
-              <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 bg-clip-text text-transparent">
                 Rides & Deliveries in Seconds.
               </span>
             </h1>
 
-            <p className="max-w-2xl text-base sm:text-lg text-text-muted mt-6 leading-relaxed">
+            <p className="max-w-xl text-sm sm:text-base text-text-muted mt-5 leading-relaxed">
               Designed specifically for UMaT students & staff. Request quick campus rides or order food and parcel deliveries direct to your hostel or lecture hall.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-10 w-full sm:w-auto">
+            {/* Hero Primary CTAs */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-10 w-full sm:w-auto">
               <Link
                 href="/workspace"
-                className="btn-primary-shimmer flex items-center justify-center gap-2 rounded.xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-7 py-3.5 text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] cursor-pointer"
+                className="btn-primary-shimmer flex items-center justify-center gap-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-4 text-sm transition-all shadow-[0_8px_25px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Car className="h-4 w-4" />
+                <Car className="h-4 w-4 stroke-[2.5]" />
                 Book Campus Ride
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 stroke-[2.5]" />
               </Link>
               <Link
                 href="/workspace"
-                className="flex items-center justify-center gap-2 rounded-xl border border-border-mute bg-surface px-7 py-3.5 text-sm font-medium text-foreground transition-all hover:bg-background hover:border-emerald-500/40 cursor-pointer"
+                className="flex items-center justify-center gap-2.5 rounded-xl border border-border-mute bg-surface px-8 py-4 text-sm font-bold text-foreground transition-all hover:bg-background hover:border-emerald-500/40 cursor-pointer shadow-sm"
               >
-                <Package className="h-4 w-4 text-emerald-500" />
+                <Package className="h-4 w-4 text-emerald-500 stroke-[2.5]" />
                 Request Delivery
               </Link>
             </div>
 
-            {/* Key Metrics */}
+            {/* Key Metrics Counter */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl w-full border-t border-border-mute/80 mt-16 pt-8 text-left">
               <div className="flex flex-col gap-1">
-                <span className="text-3xl font-extrabold text-foreground tracking-tight">&lt; 3 Min</span>
+                <span className="text-3xl font-black text-foreground tracking-tight">&lt; 3 Min</span>
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted font-mono">Avg Pickup Time</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">100%</span>
+                <span className="text-3xl font-black text-emerald-500 tracking-tight">100%</span>
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted font-mono">Verified Campus Riders</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-3xl font-extrabold text-foreground tracking-tight">GHS 5.00+</span>
+                <span className="text-3xl font-black text-foreground tracking-tight">GHS 4.00+</span>
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted font-mono">Affordable Student Fares</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-3xl font-extrabold text-foreground tracking-tight">MoMo & Cash</span>
+                <span className="text-3xl font-black text-foreground tracking-tight">MoMo & Cash</span>
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted font-mono">Instant Payments</span>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-
-        {/* ─── 2. Vehicle Options ─── */}
-        <section className="py-20 border-b border-border-mute bg-surface">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="text-center max-w-2xl mx-auto mb-14">
-              <span className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 font-mono block mb-2">Transport Fleet</span>
-              <h2 className="text-3xl font-extrabold tracking-tight text-foreground font-sans">
-                Multiple Ways to Move Across Campus
-              </h2>
-              <p className="text-sm text-text-muted mt-2">
-                Choose the vehicle mode that fits your schedule, luggage, or delivery needs.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {/* Option 1: Taxi / Car */}
-              <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group">
-                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Car className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">Taxi / Car</h3>
-                <p className="text-xs text-text-muted mt-2 leading-relaxed">
-                  Comfortable, direct rides between campus halls, laboratories, and Tarkwa town market junction.
-                </p>
-                <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
-                  <span>Capacity: 4 Seats</span>
-                  <span>From GHS 10</span>
-                </div>
+          {/* ─── 2. SmartStudy-Style Feature Cards Section ─── */}
+          <section id="features" className="py-20 border-t border-border-mute/60 bg-surface/40 backdrop-blur-xs relative z-10">
+            <div className="max-w-6xl mx-auto px-6">
+              <div className="text-center mb-16">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-500 block mb-2">Platform Capabilities</span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Everything You Need To Move & Deliver</h2>
+                <p className="text-xs sm:text-sm text-text-muted mt-2 max-w-md mx-auto">High-performance campus transport tools built for UMaT student convenience and security.</p>
               </div>
 
-              {/* Option 2: Bus / Shuttle */}
-              <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group">
-                <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Bus className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">Bus / Shuttle</h3>
-                <p className="text-xs text-text-muted mt-2 leading-relaxed">
-                  Group shuttle rides connecting hostels, SRID hall, and main lecture faculties during peak hours.
-                </p>
-                <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold">
-                  <span>Group Travel</span>
-                  <span>From GHS 5</span>
-                </div>
-              </div>
-
-              {/* Option 3: Motorbike */}
-              <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group">
-                <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Zap className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">Express Motorbike</h3>
-                <p className="text-xs text-text-muted mt-2 leading-relaxed">
-                  Fastest option for single passengers needing quick express trips or urgent document deliveries.
-                </p>
-                <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-amber-600 dark:text-amber-400 font-semibold">
-                  <span>Express Speed</span>
-                  <span>From GHS 7</span>
-                </div>
-              </div>
-
-              {/* Option 4: E-Bicycle */}
-              <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group">
-                <div className="h-12 w-12 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Bike className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">E-Bicycle Courier</h3>
-                <p className="text-xs text-text-muted mt-2 leading-relaxed">
-                  Eco-friendly delivery riders for canteen meals, snacks, and small packages direct to hostel rooms.
-                </p>
-                <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-teal-600 dark:text-teal-400 font-semibold">
-                  <span>Eco Deliveries</span>
-                  <span>From GHS 5</span>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {FEATURE_CARDS.map((feature, idx) => (
+                  <div
+                    key={idx}
+                    className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/40 transition-all duration-300 shadow-sm hover:-translate-y-1 group"
+                  >
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
+                      <feature.Icon className="w-5 h-5 stroke-[2.25]" />
+                    </div>
+                    <h3 className="text-base font-bold mb-1.5 text-foreground tracking-tight">{feature.title}</h3>
+                    <p className="text-xs text-text-muted leading-relaxed">{feature.desc}</p>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
+          {/* ─── 3. 3-Step Workflow Section ─── */}
+          <section className="py-20 border-t border-border-mute bg-background relative z-10">
+            <div className="max-w-6xl mx-auto px-6">
+              <div className="text-center mb-14">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-500 block mb-2">Simple 3-Step Dispatch</span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">How Yɛnkɔ Works</h2>
+                <p className="text-xs sm:text-sm text-text-muted mt-2 max-w-sm mx-auto">Request a ride or delivery in three seamless steps from your smartphone.</p>
+              </div>
 
-        {/* ─── 3. Campus Hotspots Grid ─── */}
-        <section className="py-20 border-b border-border-mute bg-background">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-              <div>
-                <span className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 font-mono block mb-2">Pre-Mapped Hotspots</span>
+              {mounted && <StepsCarousel />}
+            </div>
+          </section>
+
+          {/* ─── 4. Transport Fleet Options ─── */}
+          <section className="py-20 border-t border-border-mute bg-surface/50 relative z-10">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="text-center max-w-2xl mx-auto mb-14">
+                <span className="text-xs font-bold tracking-widest uppercase text-emerald-500 font-mono block mb-2">Transport Fleet</span>
                 <h2 className="text-3xl font-extrabold tracking-tight text-foreground font-sans">
-                  UMaT Campus Pickup Points
+                  Multiple Ways to Move Across Campus
                 </h2>
+                <p className="text-sm text-text-muted mt-2">
+                  Choose the vehicle mode that fits your schedule, luggage, or delivery needs.
+                </p>
               </div>
-              <p className="text-xs text-text-muted max-w-md">
-                Select from designated campus landmarks for instant driver matching and accurate fare estimates.
-              </p>
-            </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {UMAT_CAMPUS_HOTSPOTS.map((spot) => (
-                <div key={spot.id} className="p-4 rounded-xl border border-border-mute bg-surface hover:border-emerald-500/40 transition-colors flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
-                    <MapPin className="h-4 w-4" />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Option 1: Taxi / Car */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm mb-4 group-hover:scale-105 transition-transform">
+                    <Car className="h-6 w-6 stroke-[2.25]" />
                   </div>
+                  <h3 className="text-lg font-bold text-foreground">Taxi / Car</h3>
+                  <p className="text-xs text-text-muted mt-2 leading-relaxed">
+                    Comfortable, direct rides between campus halls, laboratories, and Tarkwa town market junction.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <span>Capacity: 4 Seats</span>
+                    <span>From GHS 10</span>
+                  </div>
+                </div>
+
+                {/* Option 2: Bus / Shuttle */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-sm mb-4 group-hover:scale-105 transition-transform">
+                    <Bus className="h-6 w-6 stroke-[2.25]" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Campus Shuttle Bus</h3>
+                  <p className="text-xs text-text-muted mt-2 leading-relaxed">
+                    Group shuttle rides connecting hostels, SRID hall, and main lecture faculties during peak hours.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                    <span>Capacity: 12 Seats</span>
+                    <span>From GHS 4</span>
+                  </div>
+                </div>
+
+                {/* Option 3: Motorbike */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-sm mb-4 group-hover:scale-105 transition-transform">
+                    <Zap className="h-6 w-6 stroke-[2.25]" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Motorbike Express</h3>
+                  <p className="text-xs text-text-muted mt-2 leading-relaxed">
+                    Fastest option for single passengers needing quick express trips or urgent document deliveries.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-amber-600 dark:text-amber-400 font-semibold">
+                    <span>Capacity: 1 Seat</span>
+                    <span>From GHS 5</span>
+                  </div>
+                </div>
+
+                {/* Option 4: Campus Courier */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute hover:border-emerald-500/50 transition-all group shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shadow-sm mb-4 group-hover:scale-105 transition-transform">
+                    <Bike className="h-6 w-6 stroke-[2.25]" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Campus Courier</h3>
+                  <p className="text-xs text-text-muted mt-2 leading-relaxed">
+                    Eco-friendly delivery riders for canteen meals, snacks, and small packages direct to hostel rooms.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-border-mute/50 flex justify-between items-center text-xs font-mono text-teal-600 dark:text-teal-400 font-semibold">
+                    <span>Parcel / Goods</span>
+                    <span>From GHS 6</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── 5. Pre-Mapped Hotspots Grid ─── */}
+          <section className="py-20 border-t border-border-mute bg-background relative z-10">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+                <div>
+                  <span className="text-xs font-bold tracking-widest uppercase text-emerald-500 font-mono block mb-2">Pre-Mapped Hotspots</span>
+                  <h2 className="text-3xl font-extrabold tracking-tight text-foreground font-sans">
+                    UMaT Campus Pickup Points
+                  </h2>
+                </div>
+                <p className="text-xs text-text-muted max-w-md">
+                  Select from designated campus landmarks for instant driver matching and accurate fare estimates.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {UMAT_CAMPUS_HOTSPOTS.map((spot) => (
+                  <div key={spot.id} className="p-4 rounded-xl border border-border-mute bg-surface hover:border-emerald-500/40 transition-colors flex items-start gap-3 shadow-sm">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 shadow-sm mt-0.5">
+                      <GoogleMapsLogo className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">{spot.name}</h4>
+                      <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">{spot.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ─── 6. Tiered Pricing / Student Commuter Pass ─── */}
+          <section className="py-20 border-t border-border-mute bg-surface/50 relative z-10">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="text-center max-w-2xl mx-auto mb-14">
+                <span className="text-xs font-bold tracking-widest uppercase text-emerald-500 font-mono block mb-2">Flexible Pass Plans</span>
+                <h2 className="text-3xl font-extrabold tracking-tight text-foreground font-sans">
+                  Student Fares & Commuter Passes
+                </h2>
+                <p className="text-sm text-text-muted mt-2">
+                  Pay per ride via Mobile Money or save with an unlimited monthly campus pass.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                {/* Plan 1: Standard Pay-As-You-Go */}
+                <div className="p-8 rounded-3xl bg-background border border-border-mute shadow-sm flex flex-col justify-between">
                   <div>
-                    <h4 className="text-xs font-bold text-foreground">{spot.name}</h4>
-                    <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">{spot.description}</p>
+                    <span className="text-xs font-mono font-bold text-text-muted uppercase">Standard Rider</span>
+                    <h3 className="text-2xl font-extrabold text-foreground mt-2">Pay-As-You-Go</h3>
+                    <div className="mt-4 flex items-baseline gap-1 font-mono">
+                      <span className="text-4xl font-black text-foreground">GH₵ 4.00</span>
+                      <span className="text-xs text-text-muted">/ base trip</span>
+                    </div>
+                    <p className="text-xs text-text-muted mt-3 leading-relaxed">
+                      Ideal for occasional campus rides between lectures or weekend trips to Tarkwa market.
+                    </p>
+
+                    <ul className="mt-6 space-y-3 text-xs text-foreground">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        <span>Instant Driver Matching</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        <span>MTN MoMo & Telecel Cash</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        <span>4-Digit Security OTP PIN</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="mt-8 pt-4">
+                    <Link
+                      href="/workspace"
+                      className="w-full flex items-center justify-center py-3 rounded-xl border border-border-mute bg-surface hover:bg-background text-xs font-bold text-foreground transition-all shadow-sm"
+                    >
+                      Book Pay-As-You-Go Ride
+                    </Link>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
+                {/* Plan 2: Pro Student Commuter Pass */}
+                <div className="p-8 rounded-3xl bg-background border-2 border-emerald-500/60 shadow-xl relative flex flex-col justify-between">
+                  <div className="absolute -top-3.5 right-6 bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                    Popular Choice
+                  </div>
 
-        {/* ─── 4. Deliveries Feature Callout ─── */}
-        <section className="py-20 border-b border-border-mute bg-surface overflow-hidden">
-          <div className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <span className="text-xs font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400 font-mono">Instant Deliveries</span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
-                Need Food, Books or Laundry Delivered to Your Hostel?
-              </h2>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Yɛnkɔ isn&apos;t just for passenger rides. Specify your pickup canteen or shop, add instructions, and a nearby motorbike or e-bicycle rider will deliver it straight to your room.
-              </p>
+                  <div>
+                    <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase">Pro Commuter Pass</span>
+                    <h3 className="text-2xl font-extrabold text-foreground mt-2">Monthly Student Pass</h3>
+                    <div className="mt-4 flex items-baseline gap-1 font-mono">
+                      <span className="text-4xl font-black text-emerald-500">GH₵ 29.00</span>
+                      <span className="text-xs text-text-muted">/ month</span>
+                    </div>
+                    <p className="text-xs text-text-muted mt-3 leading-relaxed">
+                      Unlimited discount vouchers and priority dispatch during peak lecture changeovers.
+                    </p>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-3 text-xs text-foreground">
-                  <div className="h-6 w-6 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                    <Coffee className="h-3.5 w-3.5" />
+                    <ul className="mt-6 space-y-3 text-xs text-foreground">
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-emerald-500 stroke-[3]" />
+                        <span><strong>20% Off All Rides & Deliveries</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-emerald-500 stroke-[3]" />
+                        <span>Priority Peak Hour Dispatch</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-emerald-500 stroke-[3]" />
+                        <span>Free Canteen Delivery Slot</span>
+                      </li>
+                    </ul>
                   </div>
-                  <span><strong>Campus Canteen Meals</strong> — Hot food delivered while you study.</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-foreground">
-                  <div className="h-6 w-6 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                    <Package className="h-3.5 w-3.5" />
+
+                  <div className="mt-8 pt-4">
+                    <Link
+                      href="/signup"
+                      className="w-full flex items-center justify-center py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20"
+                    >
+                      Get Pro Commuter Pass
+                    </Link>
                   </div>
-                  <span><strong>Lab Documents & Books</strong> — Express transport between faculties.</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-foreground">
-                  <div className="h-6 w-6 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                  </div>
-                  <span><strong>Secure Mobile Money Payments</strong> — Pay securely via MTN MoMo or cash.</span>
                 </div>
               </div>
+            </div>
+          </section>
 
-              <div className="pt-4">
+          {/* ─── 7. Social Proof & Verified Student Reviews ─── */}
+          <section className="py-20 border-t border-border-mute bg-background relative z-10">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="text-center max-w-2xl mx-auto mb-14">
+                <span className="text-xs font-bold tracking-widest uppercase text-emerald-500 font-mono block mb-2">Student Testimonials</span>
+                <h2 className="text-3xl font-extrabold tracking-tight text-foreground font-sans">
+                  Loved by UMaT Students & Staff
+                </h2>
+                <p className="text-sm text-text-muted mt-2">
+                  See what students across Goldfields, KT Hall, and FOE say about Yɛnkɔ.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Review 1 */}
+                <div className="p-6 rounded-2xl bg-surface border border-border-mute shadow-sm space-y-4">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
+                  <p className="text-xs text-foreground leading-relaxed italic">
+                    &ldquo;Getting from Goldfields Hostel to the Main Lecture Theatre used to take 20 minutes walking in the sun. With Yɛnkɔ, a motorbike rider picks me up in 2 minutes!&rdquo;
+                  </p>
+                  <div className="pt-2 border-t border-border-mute/50 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">Ama Mensah</h4>
+                      <span className="text-[10px] text-text-muted font-mono">2nd Year Mining Eng. • Goldfields</span>
+                    </div>
+                    <UserCheck className="h-4 w-4 text-emerald-500" />
+                  </div>
+                </div>
+
+                {/* Review 2 */}
+                <div className="p-6 rounded-2xl bg-surface border border-border-mute shadow-sm space-y-4">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
+                  <p className="text-xs text-foreground leading-relaxed italic">
+                    &ldquo;Ordering canteen meals to KT Hall during exam week saved my GPA. The rider delivered hot food straight to my block entrance.&rdquo;
+                  </p>
+                  <div className="pt-2 border-t border-border-mute/50 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">Kwesi Appiah</h4>
+                      <span className="text-[10px] text-text-muted font-mono">3rd Year Electrical Eng. • KT Hall</span>
+                    </div>
+                    <UserCheck className="h-4 w-4 text-emerald-500" />
+                  </div>
+                </div>
+
+                {/* Review 3 */}
+                <div className="p-6 rounded-2xl bg-surface border border-border-mute shadow-sm space-y-4">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
+                  <p className="text-xs text-foreground leading-relaxed italic">
+                    &ldquo;The security OTP PIN verification gives me 100% peace of mind when taking late evening shuttle rides back from the FOE lab.&rdquo;
+                  </p>
+                  <div className="pt-2 border-t border-border-mute/50 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">Emmanuel Addo</h4>
+                      <span className="text-[10px] text-text-muted font-mono">4th Year Geomatic Eng. • FOE</span>
+                    </div>
+                    <UserCheck className="h-4 w-4 text-emerald-500" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── 8. Compatible Ecosystem Partners ─── */}
+          <section className="py-20 border-t border-border-mute bg-surface/50 relative z-10">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="text-center max-w-2xl mx-auto mb-14">
+                <span className="text-xs font-bold tracking-widest uppercase text-emerald-500 font-mono block mb-2">Ecosystem Partners</span>
+                <h2 className="text-3xl font-extrabold tracking-tight text-foreground font-sans">
+                  Powered by Official Integrations
+                </h2>
+                <p className="text-sm text-text-muted mt-2">
+                  Seamlessly integrated with local payments, GPS telemetry, and academic authentication.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                {/* MTN MoMo */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute flex flex-col items-center text-center group hover:border-amber-500/50 transition-all shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 shadow-sm mb-3">
+                    <MtnMoMoLogo className="h-7 w-7" />
+                  </div>
+                  <h4 className="text-xs font-bold text-foreground">MTN Mobile Money</h4>
+                  <span className="text-[10px] text-text-muted mt-1">Instant MoMo Push</span>
+                </div>
+
+                {/* Telecel Cash */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute flex flex-col items-center text-center group hover:border-red-500/50 transition-all shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 shadow-sm mb-3">
+                    <TelecelLogo className="h-7 w-7" />
+                  </div>
+                  <h4 className="text-xs font-bold text-foreground">Telecel Cash</h4>
+                  <span className="text-[10px] text-text-muted mt-1">USSD & Wallet Sync</span>
+                </div>
+
+                {/* Google Maps */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute flex flex-col items-center text-center group hover:border-blue-500/50 transition-all shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 shadow-sm mb-3">
+                    <GoogleMapsLogo className="h-7 w-7" />
+                  </div>
+                  <h4 className="text-xs font-bold text-foreground">Google Maps GPS</h4>
+                  <span className="text-[10px] text-text-muted mt-1">Real-time Telemetry</span>
+                </div>
+
+                {/* UMaT Crest Clearance */}
+                <div className="p-6 rounded-2xl bg-background border border-border-mute flex flex-col items-center text-center group hover:border-emerald-500/50 transition-all shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-sm mb-3">
+                    <UMaTCrestLogo className="h-7 w-7" />
+                  </div>
+                  <h4 className="text-xs font-bold text-foreground">UMaT Crest Portal</h4>
+                  <span className="text-[10px] text-text-muted mt-1">Student Clearance</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── 9. Final CTA Banner ─── */}
+          <section className="py-20 bg-background text-center relative overflow-hidden">
+            <div className="max-w-4xl mx-auto px-6 relative z-10">
+              <h2 className="text-3xl font-extrabold text-foreground">Ready to Get Moving Across Campus?</h2>
+              <p className="text-sm text-text-muted mt-3 max-w-xl mx-auto">
+                Launch the Yɛnkɔ dispatch hub now to book a ride or schedule an instant delivery.
+              </p>
+              <div className="mt-8 flex justify-center gap-4">
                 <Link
-                  href="/workspace"
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-3 text-xs transition-all shadow-md shadow-emerald-600/20"
+                  href="/signup"
+                  className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-4 text-sm transition-all shadow-lg shadow-emerald-500/30 active:scale-[0.98]"
                 >
-                  Create Delivery Order
-                  <ArrowRight className="h-4 w-4" />
+                  Launch Yɛnkɔ Dispatch Hub
                 </Link>
               </div>
             </div>
+          </section>
+        </main>
 
-            {/* Visual Card Mockup */}
-            <div className="p-6 rounded-3xl bg-background border border-border-mute shadow-2xl relative">
-              <div className="flex items-center justify-between pb-4 border-b border-border-mute">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-mono font-bold text-foreground">Active Delivery #YK-489</span>
-                </div>
-                <span className="text-[10px] font-mono uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-bold">In Progress</span>
-              </div>
-
-              <div className="py-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                    <Navigation className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-mono text-text-muted">Pickup Location</span>
-                    <p className="text-xs font-bold text-foreground">University Canteen (Vendor 4)</p>
-                  </div>
-                </div>
-
-                <div className="h-4 border-l-2 border-dashed border-emerald-500/40 ml-4" />
-
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
-                    <MapPin className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-mono text-text-muted">Dropoff Location</span>
-                    <p className="text-xs font-bold text-foreground">SRID Hall - Block B Room 204</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-surface border border-border-mute flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-text-muted font-mono">Assigned Rider</span>
-                  <p className="text-xs font-bold text-foreground">Kwame A. • E-Bicycle Rider</p>
-                </div>
-                <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">GHS 8.00</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-        {/* ─── 5. Final CTA ─── */}
-        <section className="py-20 bg-background text-center">
-          <div className="mx-auto max-w-4xl px-6">
-            <h2 className="text-3xl font-extrabold text-foreground">Ready to Get Moving Across Campus?</h2>
-            <p className="text-sm text-text-muted mt-3 max-w-xl mx-auto">
-              Launch the Yɛnkɔ dispatch hub now to book a ride or schedule an instant delivery.
-            </p>
-            <div className="mt-8 flex justify-center gap-4">
-              <Link
-                href="/workspace"
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-8 py-3.5 text-sm transition-all shadow-lg shadow-emerald-600/20"
-              >
-                Launch Yɛnkɔ Workspace
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }

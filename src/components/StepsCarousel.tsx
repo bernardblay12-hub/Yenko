@@ -1,161 +1,214 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { UploadCloud, FileText, MessageSquare, Move } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Navigation, CreditCard, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function StepsCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [dragStartX, setDragStartX] = useState(0);
   const [isUserInteracting, setIsUserInteracting] = useState(false);
-  const autoSwipeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const slides = [
+  const steps = [
     {
       step: "01",
-      title: "Upload CV",
-      description: "Drag and drop your master resume. Our parser extracts your real experience in seconds.",
-      icon: UploadCloud,
-      color: "border-emerald-500/20 bg-surface dark:bg-zinc-900 text-emerald-650 dark:text-emerald-400",
+      title: "Select UMaT Landmark",
+      description: "Pick your pickup node from pre-mapped UMaT hotspots like Main Gate, KT Hall, SRID, or FOE.",
+      icon: MapPin,
+      badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      accentBorder: "group-hover:border-emerald-500/40",
     },
     {
       step: "02",
-      title: "Paste Job Link",
-      description: "Provide the job link or description. ResuTailor instantly identifies required skills and criteria.",
-      icon: FileText,
-      color: "border-indigo-500/20 bg-surface dark:bg-zinc-900 text-indigo-650 dark:text-indigo-400",
+      title: "Choose Fleet & Fare",
+      description: "Select Motorbike Express, Campus Shuttle Bus, Taxi Car, or E-Bicycle Courier.",
+      icon: Navigation,
+      badgeColor: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20",
+      accentBorder: "group-hover:border-teal-500/40",
     },
     {
       step: "03",
-      title: "Answer Questions",
-      description: "Respond to targeted, honest questions about your background to map your achievements truthfully.",
-      icon: MessageSquare,
-      color: "border-amber-500/20 bg-surface dark:bg-zinc-900 text-amber-650 dark:text-amber-455",
+      title: "Verify OTP & Ride",
+      description: "Share your 4-digit security PIN with your driver and pay via MTN MoMo, Telecel Cash, or Cash.",
+      icon: CreditCard,
+      badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+      accentBorder: "group-hover:border-amber-500/40",
     }
   ];
 
   useEffect(() => {
     if (isUserInteracting) return;
-    autoSwipeTimerRef.current = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % slides.length);
-    }, 3800);
+    autoTimerRef.current = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % steps.length);
+    }, 4500);
     return () => {
-      if (autoSwipeTimerRef.current) clearInterval(autoSwipeTimerRef.current);
+      if (autoTimerRef.current) clearInterval(autoTimerRef.current);
     };
-  }, [isUserInteracting, slides.length]);
+  }, [isUserInteracting, steps.length]);
 
   const handleUserInteraction = useCallback(() => {
     setIsUserInteracting(true);
-    const resumeTimer = setTimeout(() => setIsUserInteracting(false), 6000);
-    return () => clearTimeout(resumeTimer);
+    const timer = setTimeout(() => setIsUserInteracting(false), 8000);
+    return () => clearTimeout(timer);
   }, []);
 
+  const handleNext = () => {
+    setActiveIndex((prev) => (prev + 1) % steps.length);
+    handleUserInteraction();
+  };
+
+  const handlePrev = () => {
+    setActiveIndex((prev) => (prev - 1 + steps.length) % steps.length);
+    handleUserInteraction();
+  };
+
   return (
-    <div className="w-full max-w-sm mx-auto overflow-hidden">
-      <div className="relative h-[250px] flex items-center justify-center">
-        {/* Swipe hint */}
-        <motion.div
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ delay: 2.5, duration: 0.5 }}
-          className="absolute top-1 text-center text-[10px] text-text-muted pointer-events-none z-20 flex items-center gap-1 font-mono uppercase tracking-wider"
-        >
-          <Move className="w-3 h-3 animate-pulse" /> Swipe to navigate steps
-        </motion.div>
+    <div className="w-full max-w-5xl mx-auto">
+      {/* ─── Desktop & Tablet Layout (3-Column Interactive Grid) ─── */}
+      <div className="hidden md:grid md:grid-cols-3 gap-6 relative">
+        {/* Connecting line behind step cards */}
+        <div className="absolute top-12 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-emerald-500/30 via-teal-500/30 to-amber-500/30 -z-0" />
 
-        {/* Drag Container */}
-        <motion.div
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.15}
-          onDragStart={(e, info) => {
-            setDragStartX(info.point.x);
-            handleUserInteraction();
-          }}
-          onDragEnd={(e, info) => {
-            const dragDistance = info.point.x - dragStartX;
-            const threshold = 55;
+        {steps.map((step, idx) => {
+          const Icon = step.icon;
+          const isActive = activeIndex === idx;
 
-            if (dragDistance > threshold) {
-              setActiveIndex((prev) => (prev - 1 + slides.length) % slides.length);
-            } else if (dragDistance < -threshold) {
-              setActiveIndex((prev) => (prev + 1) % slides.length);
-            }
-          }}
-          className="relative w-full h-full cursor-grab active:cursor-grabbing"
-        >
-          {slides.map((slide, idx) => {
-            const offset = (idx - activeIndex) * 90;
-            const absOffset = Math.abs(idx - activeIndex);
-            const scale = idx === activeIndex ? 1 : Math.max(0.78, 1 - absOffset * 0.12);
-            const opacity = idx === activeIndex ? 1 : Math.max(0.15, 1 - absOffset * 0.45);
-            const zIndex = 10 - absOffset;
-
-            const Icon = slide.icon;
-
-            return (
-              <motion.div
-                key={idx}
-                animate={{
-                  x: `${offset}%`,
-                  scale,
-                  opacity,
-                }}
-                transition={{
-                  type: "tween",
-                  ease: "easeInOut",
-                  duration: 0.45,
-                }}
-                onClick={() => {
-                  if (idx !== activeIndex) {
-                    setActiveIndex(idx);
-                    handleUserInteraction();
-                  }
-                }}
-                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] p-6 rounded-2xl border transition-all duration-300 ${slide.color} flex flex-col items-center text-center space-y-3.5 shadow-sm relative overflow-hidden`}
-                style={{ zIndex, willChange: "transform, opacity" }}
-              >
-                <span className="absolute top-3 right-4 text-[9px] font-bold font-mono text-zinc-400">
-                  Step {slide.step}
-                </span>
-                
-                <div className="p-3 rounded-full bg-surface dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/60 shadow-xs text-foreground">
-                  <Icon className="h-4.5 w-4.5" />
+          return (
+            <motion.div
+              key={idx}
+              whileHover={{ y: -4 }}
+              onClick={() => {
+                setActiveIndex(idx);
+                handleUserInteraction();
+              }}
+              className={`relative z-10 p-6 rounded-2xl bg-surface border transition-all duration-300 cursor-pointer flex flex-col justify-between h-full shadow-xs group ${
+                isActive
+                  ? "border-emerald-500/60 ring-2 ring-emerald-500/20 shadow-md"
+                  : "border-border-mute hover:border-emerald-500/30"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className={`p-3 rounded-xl border ${step.badgeColor} shadow-xs`}>
+                    <Icon className="w-5 h-5 stroke-[2.25]" />
+                  </div>
+                  <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${
+                    isActive
+                      ? "bg-emerald-500 text-white border-emerald-500"
+                      : "bg-background text-text-muted border-border-mute"
+                  }`}>
+                    Step {step.step}
+                  </span>
                 </div>
-                <h4 className="text-xs font-bold text-foreground tracking-tight">
-                  {slide.title}
-                </h4>
-                <p className="text-[11px] text-text-muted leading-relaxed">
-                  {slide.description}
+
+                <h3 className="text-base font-bold text-foreground tracking-tight mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  {step.description}
                 </p>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+              </div>
+
+              {idx < steps.length - 1 && (
+                <div className="hidden lg:flex items-center gap-1 text-[11px] font-mono text-emerald-500/70 font-semibold mt-4">
+                  <span>Next Step</span>
+                  <ArrowRight className="w-3 h-3" />
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Dot Indicators with 40px touch targets */}
-      <div className="flex justify-center gap-1.5 mt-2">
-        {slides.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => {
-              setActiveIndex(idx);
-              handleUserInteraction();
-            }}
-            aria-label={`Go to step ${idx + 1}`}
-            className="w-10 h-10 flex items-center justify-center -m-3 touch-manipulation cursor-pointer"
-          >
-            <motion.div
-              animate={{
-                width: idx === activeIndex ? 18 : 6,
-                backgroundColor: idx === activeIndex ? "#10b981" : "var(--color-card-border, rgba(161,161,170,0.3))",
+      {/* ─── Mobile View (Clean Tab Switcher & Animated Card Carousel) ─── */}
+      <div className="block md:hidden max-w-sm mx-auto">
+        {/* Step Tab Buttons */}
+        <div className="flex justify-center gap-2 mb-4">
+          {steps.map((step, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                setActiveIndex(idx);
+                handleUserInteraction();
               }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                activeIndex === idx
+                  ? "bg-emerald-500 text-white shadow-xs"
+                  : "bg-surface border border-border-mute text-text-muted hover:text-foreground"
+              }`}
+            >
+              Step {step.step}
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile Slide Card */}
+        <div className="relative overflow-hidden min-h-[200px] flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeIndex}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.25 }}
-              className="h-1.5 rounded-full"
-            />
+              className="w-full p-6 rounded-2xl bg-surface border border-emerald-500/40 shadow-sm flex flex-col items-center text-center space-y-3"
+            >
+              <div className={`p-3 rounded-full border ${steps[activeIndex].badgeColor}`}>
+                {(() => {
+                  const Icon = steps[activeIndex].icon;
+                  return <Icon className="w-6 h-6 stroke-[2.25]" />;
+                })()}
+              </div>
+
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-500">
+                Step {steps[activeIndex].step} of 03
+              </span>
+
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
+                {steps[activeIndex].title}
+              </h3>
+
+              <p className="text-xs text-text-muted leading-relaxed max-w-xs">
+                {steps[activeIndex].description}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Mobile Navigation Controls */}
+        <div className="flex items-center justify-between mt-4 px-2">
+          <button
+            onClick={handlePrev}
+            className="p-2 rounded-lg border border-border-mute bg-surface text-foreground hover:bg-background transition-colors cursor-pointer"
+            aria-label="Previous step"
+          >
+            <ChevronLeft className="w-4 h-4" />
           </button>
-        ))}
+
+          <div className="flex gap-1.5">
+            {steps.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setActiveIndex(idx);
+                  handleUserInteraction();
+                }}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                  activeIndex === idx ? "w-6 bg-emerald-500" : "w-1.5 bg-border-mute"
+                }`}
+                aria-label={`Go to step ${idx + 1}`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={handleNext}
+            className="p-2 rounded-lg border border-border-mute bg-surface text-foreground hover:bg-background transition-colors cursor-pointer"
+            aria-label="Next step"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

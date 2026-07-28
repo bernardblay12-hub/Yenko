@@ -5,6 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
+import Logo from "@/components/Logo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -56,16 +57,7 @@ export default function ForgotPasswordPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-6">
         {/* Branding Logo */}
         <div className="flex justify-center mb-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/logo.png"
-              alt="ResuTailor Logo"
-              className="h-8 w-8 object-contain rounded border border-zinc-200 dark:border-zinc-800"
-            />
-            <span className="font-sans font-bold tracking-tight text-foreground text-lg">
-              resu<span className="text-zinc-400 font-normal">tailor</span>
-            </span>
-          </Link>
+          <Logo size="lg" />
         </div>
         <h2 className="text-center text-xl font-bold tracking-tight text-foreground font-sans">
           Reset your password

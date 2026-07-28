@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Logo from "@/components/Logo";
 
 export default function Footer() {
   return (
@@ -8,14 +9,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
         {/* Column 1: Brand & Logo */}
         <div className="col-span-2 md:col-span-1 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
-              Yɛ
-            </div>
-            <span className="font-sans font-bold tracking-tight text-foreground text-sm">
-              Yɛnkɔ<span className="text-emerald-600 dark:text-emerald-500 font-normal">.app</span>
-            </span>
-          </div>
+          <Logo href="/" size="sm" />
           <p className="text-[11px] text-text-muted leading-relaxed max-w-xs">
             On-demand campus transport and instant package deliveries for university students and staff across UMaT Tarkwa.
           </p>
