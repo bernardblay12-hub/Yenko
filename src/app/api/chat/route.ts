@@ -21,10 +21,8 @@ export async function POST(req: NextRequest) {
       profileSchool,
       profileDegree,
       profileAspiration,
-      profileAdisadel,
       aiTone,
       aiLanguage,
-      khadijaMode,
     } = await req.json();
 
     const apiKey = process.env.OPENAI_API_KEY;
@@ -40,7 +38,6 @@ export async function POST(req: NextRequest) {
         profileAspiration,
         aiTone,
         aiLanguage,
-        khadijaMode,
       });
     }
 
@@ -48,7 +45,7 @@ export async function POST(req: NextRequest) {
     let customSystemPrompt = SYSTEM_PROMPT;
     
     // Build candidate details dynamically so it fits both students and professionals
-    let candidateDescription = `You are helping the user, ${profileName || "Bernard"}.`;
+    let candidateDescription = `You are helping the user, ${profileName || "the candidate"}.`;
     
     const educationParts: string[] = [];
     if (profileDegree) educationParts.push(`studying/holding a background in ${profileDegree}`);
@@ -64,10 +61,6 @@ export async function POST(req: NextRequest) {
       candidateDescription += ` Their target career goal or aspiration is: ${profileAspiration}.`;
     }
     
-    if (profileAdisadel) {
-      candidateDescription += ` They are an alumnus of Adisadel College.`;
-    }
-    
     customSystemPrompt = `You are ResuTailor, a resume tailoring assistant. ${candidateDescription}
       
 When the user provides their CV and a job description:
@@ -78,8 +71,7 @@ When the user provides their CV and a job description:
 5. When generating, only use what the user has confirmed. If a key requirement has no match, flag it as a gap — do not fill it in.
 6. Tone preference: Maintain a tone that is ${aiTone === "recruiter" ? "very critical, like a tough tech recruiter looking for flaws" : aiTone === "auditor" ? "highly analytical, like a cybersecurity auditor verifying facts" : "supportive, cooperative, and helpful"}.
 7. Language preference: You must converse in ${aiLanguage === "fr" ? "French" : aiLanguage === "de" ? "German" : aiLanguage === "dar" ? "Moroccan Arabic (Darija)" : "English"}.
-${khadijaMode ? `8. Khadija Mode is ENABLED. Since you are talking to Bernard, occasionally add supportive Moroccan Arabic/French phrases of encouragement like "Bon courage, bro" or "Dima Maghrib" or "Allah y3awnak", and maintain an extra warm, friendly tone as if you are his partner cheering him on.` : ""}
-${khadijaMode ? "9. You may use warm emojis like 💖, ✨, 👍, 💪." : "8. Do NOT use emojis, icons, slang, or informal language in your responses. Always maintain a professional, objective, and executive tone throughout."}`;
+8. Do NOT use emojis, icons, slang, or informal language in your responses. Always maintain a professional, objective, and executive tone throughout.`;
 
     const openaiHeaders = {
       "Content-Type": "application/json",
@@ -230,40 +222,39 @@ function handleMockChat(
   settings: any = {}
 ) {
   const {
-    profileName = "Bernard Blay",
-    profileSchool = "University of Mines and Technology (UMaT)",
-    profileDegree = "BSc in Computer Science & Engineering",
-    profileAspiration = "US Graduate School & Security Research",
+    profileName = "Candidate Name",
+    profileSchool = "University Name",
+    profileDegree = "BSc in Computer Science",
+    profileAspiration = "Software Engineering",
     aiTone = "cooperative",
     aiLanguage = "en",
-    khadijaMode = false,
   } = settings;
 
   // If request is to generate the final resume
   if (generateResume) {
     const mockResume = {
       name: profileName,
-      title: `${profileDegree.replace("BSc ", "").replace("BSc in ", "")} & Full-Stack Developer`,
-      email: settings.profileEmail || "bernard.blay@umat.edu.gh",
-      phone: settings.profilePhone || "+233 55 123 4567",
-      website: settings.profileWebsite || "github.com/bernardblay",
-      summary: `Dedicated student and developer focusing on frontend system development, cybersecurity protocols, and clean web engineering architectures. Experienced with TypeScript, React, and network traffic security audits. Target goal: ${profileAspiration.toLowerCase()}.`,
+      title: `${profileDegree.replace("BSc ", "").replace("BSc in ", "")} & Developer`,
+      email: settings.profileEmail || "candidate@example.com",
+      phone: settings.profilePhone || "+1 555-0199",
+      website: settings.profileWebsite || "github.com/candidate",
+      summary: `Dedicated student and developer focusing on frontend system development and clean web engineering architectures. Target goal: ${profileAspiration.toLowerCase()}.`,
       experience: [
         {
           id: "exp1",
           role: "Frontend Engineering Intern",
-          company: "Vercel Partner Lab",
+          company: "Tech Labs Ltd",
           duration: "Jan 2026 - Present",
           bullets: [
             "Developed core responsive features using React and modern CSS structures for international user dashboards.",
-            "Partnered with Vercel team to run performance tests; integrated Next.js Server Actions to optimize asset latency, achieving a 15% reduction in loading speeds [unverified]",
+            "Partnered with engineering team to run performance tests; integrated Server Actions to optimize asset latency, achieving a 15% reduction in loading speeds [unverified]",
             "Maintained and optimized codebases in Git repositories, following production linting and formatting practices."
           ]
         },
         {
           id: "exp2",
           role: "Web Administrator",
-          company: `${settings.profileAdisadel ? "Adisadel College / " : ""}UMaT Cyber Security Club`,
+          company: "University Tech Club",
           duration: "Sep 2025 - Dec 2025",
           bullets: [
             "Administered club portal and monitored network endpoints for suspicious activities [unverified]",
@@ -279,7 +270,7 @@ function handleMockChat(
           duration: `2024 - ${settings.profileGradYear || "2028"} (Expected)`
         }
       ],
-      skills: ["React", "TypeScript", "Next.js", "Git", "CSS", "Network Security", "Tailwind v4"]
+      skills: ["React", "TypeScript", "Next.js", "Git", "CSS", "Performance Optimization"]
     };
 
     return NextResponse.json({ resume: mockResume });
@@ -301,15 +292,6 @@ function handleMockChat(
     greeting = `Salam, aji ${profileName.split(" ")[0]}!`;
   } else {
     greeting = `Hello ${profileName.split(" ")[0]}!`;
-  }
-
-  // Khadija Mode overrides
-  if (khadijaMode) {
-    if (aiLanguage === "dar" || aiLanguage === "en") {
-      greeting = `Salam, Bernard habibi! Allah y3awnak 💖✨`;
-    } else if (aiLanguage === "fr") {
-      greeting = `Bonjour mon cher Bernard! Bon courage pour ton travail! 💖✨`;
-    }
   }
 
   // Tone descriptions
@@ -366,7 +348,7 @@ Let's begin. Question 1: Do you have hands-on experience optimizing React applic
     if (aiLanguage === "fr") {
       reply = `Merci pour ces précisions. Passons à la suite.
       
-Question 2: Avez-vous travaillé avec les Server Actions de Next.js ou le SSR? Comment les avez-vous mis en œuvre? ${khadijaMode ? "Tu es le meilleur, continue! 💖" : ""}`;
+Question 2: Avez-vous travaillé avec les Server Actions de Next.js ou le SSR? Comment les avez-vous mis en œuvre?`;
     } else if (aiLanguage === "de") {
       reply = `Danke für die Bestätigung. Weiter geht's.
       
@@ -374,17 +356,17 @@ Frage 2: Haben Sie mit Next.js Server Actions oder SSR gearbeitet? Wie haben Sie
     } else if (aiLanguage === "dar") {
       reply = `Shokran 3la l'tawdihed. Ndozo l'matlab l'tani.
       
-Soal 2: Wesh khdemti b Next.js Server Actions wla SSR? Kifash derti liha? ${khadijaMode ? "Lah ywfkaq a sahbi! 💖" : ""}`;
+Soal 2: Wesh khdemti b Next.js Server Actions wla SSR? Kifash derti liha?`;
     } else {
       reply = `Thanks for confirming. Let's move on to the next requirement.
 
-Question 2: Have you worked with Next.js Server Actions or Server-Side Rendering in production or personal projects? Please tell me how you implemented them. ${khadijaMode ? "You're doing great, bro! Keep going! 💖" : ""}`;
+Question 2: Have you worked with Next.js Server Actions or Server-Side Rendering in production or personal projects? Please tell me how you implemented them.`;
     }
   } else if (round === 3) {
     if (aiLanguage === "fr") {
       reply = `Entendu. 
 
-Question 3: Dans le cadre de vos études en cybersécurité à ${profileSchool}, avez-vous effectué de la surveillance de trafic ou des scans de vulnérabilités?`;
+Question 3: Dans le cadre de vos études à ${profileSchool}, avez-vous effectué de la surveillance de trafic ou des scans de vulnérabilités?`;
     } else if (aiLanguage === "de") {
       reply = `Verstanden. 
 
@@ -402,7 +384,7 @@ Question 3: The description mentions security audits. In your role at ${profileS
     if (aiLanguage === "fr") {
       reply = `Merci pour ces détails! J'ai maintenant toutes les informations nécessaires pour adapter votre CV de manière honnête.
       
-Vous pouvez maintenant générer votre CV personnalisé! [GENERATE_RESUME] ${khadijaMode ? "Je suis trop fière de toi! 💖✨" : ""}`;
+Vous pouvez maintenant générer votre CV personnalisé! [GENERATE_RESUME]`;
     } else if (aiLanguage === "de") {
       reply = `Vielen Dank für diese Details! Ich habe jetzt genug Kontext, um Ihren Lebenslauf ehrlich anzupassen.
       
@@ -410,11 +392,11 @@ Sie können nun Ihren maßgeschneiderten Lebenslauf erstellen! [GENERATE_RESUME]
     } else if (aiLanguage === "dar") {
       reply = `Shokran bezaf! Safi 3ndi bga3 l'context daba bash n'tailori l'CV dialek.
       
-T9der t'générer l'CV dialek daba! [GENERATE_RESUME] ${khadijaMode ? "Dima Maghrib, dima top! 💖✨" : ""}`;
+T9der t'générer l'CV dialek daba! [GENERATE_RESUME]`;
     } else {
       reply = `Thank you for these details! I now have a solid understanding of your real experience and can tailor your resume honestly, without making up any skills.
 
-I have flagged the unconfirmed items as unverified gaps. You can now generate your tailored resume! [GENERATE_RESUME] ${khadijaMode ? "So proud of you! Let's get this tailored resume! 💖✨" : ""}`;
+I have flagged the unconfirmed items as unverified gaps. You can now generate your tailored resume! [GENERATE_RESUME]`;
     }
   }
 

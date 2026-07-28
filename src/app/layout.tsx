@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import ThemeInitializer from "@/components/ThemeInitializer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ResuTailor | Professional CV Customization",
-  description: "Align your CV to any job description using AI. Extract requirements directly from URLs, compare differences, and export print-ready PDFs.",
+  title: "Yɛnkɔ | Campus Ride & Delivery System for Students",
+  description: "Request fast campus rides and instant package deliveries across UMaT Tarkwa campus via taxis, shuttles, motorbikes, and e-bicycles.",
 };
 
 export default function RootLayout({
@@ -30,23 +31,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('theme');
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && prefersDark)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
+        <ThemeInitializer />
       </head>
       <body className="min-h-full flex flex-col">
         <Toaster position="bottom-right" richColors />

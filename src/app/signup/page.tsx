@@ -157,7 +157,7 @@ export default function SignUpPage() {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Bernard Blay"
+                  placeholder="e.g. Alex Carter"
                   className="block w-full pl-9 pr-3 py-2 text-xs bg-background border border-border-mute rounded-lg outline-none focus:border-emerald-500 transition-colors text-foreground"
                 />
               </div>
