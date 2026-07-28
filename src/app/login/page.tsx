@@ -100,7 +100,7 @@ export default function LoginPage() {
     }
     setIsGoogleLoading(true);
     try {
-      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : "";
+      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/workspace` : "";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
