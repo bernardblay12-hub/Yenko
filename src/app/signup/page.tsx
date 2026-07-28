@@ -5,16 +5,19 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Mail, Lock, User, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Loader2, Eye, EyeOff, Car, GraduationCap, ShieldCheck } from "lucide-react";
 import { GoogleLogo } from "@/components/BrandIcons";
 import Logo from "@/components/Logo";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [accountRole, setAccountRole] = useState<"student" | "driver">("student");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [vehicleType, setVehicleType] = useState<string>("Taxi / Car");
+  const [driverIdNumber, setDriverIdNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,13 +52,19 @@ export default function SignUpPage() {
 
     setIsLoading(true);
     try {
+      const profileData = {
+        full_name: fullName,
+        role: accountRole,
+        vehicle_type: accountRole === "driver" ? vehicleType : null,
+        is_verified_driver: accountRole === "driver",
+        student_id_number: driverIdNumber || "70012345",
+      };
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: fullName,
-          },
+          data: profileData,
           emailRedirectTo: typeof window !== "undefined" ? window.location.origin + "/login" : "",
         },
       });
@@ -63,10 +72,17 @@ export default function SignUpPage() {
       if (error) {
         toast.error(error.message);
       } else {
-        // If auto-confirm is enabled in Supabase local, they might be logged in directly.
-        // If verification email is required, let them know.
+        // Update local session profile cache
+        if (typeof window !== "undefined") {
+          localStorage.setItem("yenko_profile", JSON.stringify({
+            id: data.user?.id || "mock-user-id",
+            ...profileData,
+            email,
+          }));
+        }
+
         if (data.session) {
-          toast.success("Account created successfully, welcome!");
+          toast.success(`Account created successfully as ${accountRole === "driver" ? "Campus Driver" : "Student Commuter"}!`);
           router.push("/workspace");
         } else {
           toast.success("Registration successful! Check your email to verify your account.");
@@ -133,7 +149,42 @@ export default function SignUpPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-surface border border-border-mute py-8 px-6 sm:px-10 rounded-2xl shadow-xl backdrop-blur-md">
-          <form className="space-y-5" onSubmit={handleSignUp}>
+          
+          {/* Account Role Selector (Student vs Driver) */}
+          <div className="mb-6">
+            <label className="block text-[10px] font-mono font-bold text-text-muted uppercase mb-2">
+              Select Account Role
+            </label>
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-background border border-border-mute">
+              <button
+                type="button"
+                onClick={() => setAccountRole("student")}
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  accountRole === "student"
+                    ? "bg-emerald-500 text-white shadow-xs"
+                    : "text-text-muted hover:text-foreground"
+                }`}
+              >
+                <GraduationCap className="h-4 w-4" />
+                Student Commuter
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccountRole("driver")}
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  accountRole === "driver"
+                    ? "bg-amber-500 text-white shadow-xs"
+                    : "text-text-muted hover:text-foreground"
+                }`}
+              >
+                <Car className="h-4 w-4" />
+                Campus Driver
+              </button>
+            </div>
+          </div>
+
+          <form className="space-y-4" onSubmit={handleSignUp}>
             {/* Full Name Input */}
             <div>
               <label htmlFor="name" className="block text-[10px] font-mono font-bold text-text-muted uppercase mb-1.5">
@@ -178,6 +229,45 @@ export default function SignUpPage() {
                 />
               </div>
             </div>
+
+            {/* Additional Fields for Campus Driver Registration */}
+            {accountRole === "driver" && (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+                  <ShieldCheck className="h-4 w-4" />
+                  Campus Driver Clearance Setup
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-mono font-bold uppercase text-text-muted mb-1">
+                    Vehicle Type
+                  </label>
+                  <select
+                    value={vehicleType}
+                    onChange={(e) => setVehicleType(e.target.value)}
+                    className="block w-full p-2 text-xs bg-background border border-border-mute rounded-lg outline-none text-foreground"
+                  >
+                    <option value="Taxi / Car">🚕 Taxi / Passenger Car</option>
+                    <option value="Motorbike">🏍️ Motorbike Express</option>
+                    <option value="Bus / Shuttle">🚌 Campus Shuttle Bus</option>
+                    <option value="E-Bicycle">🚲 E-Bicycle Courier</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-mono font-bold uppercase text-text-muted mb-1">
+                    Student/Staff ID or Driver Permit #
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. UMaT-70012345"
+                    value={driverIdNumber}
+                    onChange={(e) => setDriverIdNumber(e.target.value)}
+                    className="block w-full p-2 text-xs bg-background border border-border-mute rounded-lg outline-none text-foreground"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Password Input */}
             <div>
@@ -235,12 +325,16 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-xs font-bold text-background bg-foreground hover:bg-zinc-800 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200 transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white transition-all focus:outline-none disabled:opacity-50 cursor-pointer ${
+                  accountRole === "driver"
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
               >
                 {isLoading ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  "Create Account"
+                  accountRole === "driver" ? "Create Campus Driver Account" : "Create Student Account"
                 )}
               </button>
             </div>
@@ -253,7 +347,7 @@ export default function SignUpPage() {
                 <div className="w-full border-t border-border-mute" />
               </div>
               <div className="relative flex justify-center text-[10px] font-mono font-bold uppercase">
-                <span className="px-2 bg-surface text-text-muted">Or register with</span>
+                <span className="px-2 bg-surface text-text-muted">Or continue with</span>
               </div>
             </div>
 
@@ -270,7 +364,7 @@ export default function SignUpPage() {
                 ) : (
                   <>
                     <GoogleLogo className="h-4 w-4" />
-                    Register with Google
+                    Sign up with Google
                   </>
                 )}
               </button>
@@ -285,7 +379,7 @@ export default function SignUpPage() {
                 href="/login"
                 className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
               >
-                Sign in here
+                Sign in
               </Link>
             </p>
           </div>
