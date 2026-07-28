@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import WorkspaceHeader from "@/components/WorkspaceHeader";
-import Footer from "@/components/Footer";
 import { 
   Car, 
   Package, 
@@ -19,13 +19,16 @@ import {
   AlertCircle,
   Plus,
   RotateCcw,
-  Check
+  Check,
+  ShieldAlert,
+  ShieldCheck
 } from "lucide-react";
 import { supabase, UMAT_CAMPUS_HOTSPOTS } from "@/lib/supabase";
 import { MtnMoMoLogo, TelecelLogo } from "@/components/BrandIcons";
 import { toast } from "sonner";
 
 export default function WorkspacePage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"book" | "active" | "history">("book");
   const [serviceType, setServiceType] = useState<"ride" | "delivery">("ride");
   
@@ -39,15 +42,42 @@ export default function WorkspacePage() {
   const [vehicleType, setVehicleType] = useState<"Taxi / Car" | "Bus / Shuttle" | "Motorbike" | "E-Bicycle">("Taxi / Car");
   const [paymentMethod, setPaymentMethod] = useState<"momo" | "cash">("momo");
   
-  // Trip management state
+  // Auth & Profile state
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [driverMode, setDriverMode] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  // Load existing trips on mount
+  // Authenticate & Load Profile on mount
   useEffect(() => {
-    fetchTrips();
-  }, []);
+    if (!supabase) {
+      setIsAuthChecking(false);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        toast.error("Please sign in to access your dashboard.");
+        router.push("/login");
+        return;
+      }
+
+      setIsAuthChecking(false);
+
+      // Load User Profile
+      supabase.from("profiles").select("*").maybeSingle().then(({ data }) => {
+        if (data) {
+          setUserProfile(data);
+          if (data.role === "driver") {
+            setDriverMode(true);
+          }
+        }
+      });
+
+      fetchTrips();
+    });
+  }, [router]);
 
   const fetchTrips = async () => {
     try {
@@ -58,6 +88,21 @@ export default function WorkspacePage() {
     } catch (err) {
       console.error("Error fetching trips:", err);
     }
+  };
+
+  // Role Switching Guard
+  const handleToggleDriverMode = () => {
+    const isVerifiedDriver = userProfile?.role === "driver" || userProfile?.is_verified_driver === true;
+
+    if (!driverMode && !isVerifiedDriver) {
+      toast.error("Driver View is restricted to verified UMaT drivers. Please complete driver clearance first.", {
+        icon: <ShieldAlert className="w-4 h-4 text-amber-500" />
+      });
+      return;
+    }
+
+    setDriverMode(!driverMode);
+    toast.success(driverMode ? "Switched to Student Commuter View" : "Switched to Driver Dispatch View");
   };
 
   // Fare Calculation
@@ -95,7 +140,7 @@ export default function WorkspacePage() {
 
     const newTrip = {
       id: `YK-${Math.floor(100000 + Math.random() * 900000)}`,
-      user_id: "mock-user-id",
+      user_id: userProfile?.id || "mock-user-id",
       service_type: serviceType,
       pickup_location: actualPickup,
       dropoff_location: actualDropoff,
@@ -147,12 +192,23 @@ export default function WorkspacePage() {
   const activeTrips = trips.filter(t => t.status !== "completed" && t.status !== "cancelled");
   const pastTrips = trips.filter(t => t.status === "completed" || t.status === "cancelled");
 
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          <p className="text-xs font-mono font-bold text-text-muted">Loading Yɛnkɔ Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans">
       <WorkspaceHeader />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Top Header & Driver Mode Switch */}
+        {/* Top Header & Driver Mode Control */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-mute pb-6 mb-8">
           <div>
             <div className="flex items-center gap-2">
@@ -168,7 +224,7 @@ export default function WorkspacePage() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setDriverMode(!driverMode)}
+              onClick={handleToggleDriverMode}
               className={`text-xs font-mono font-semibold px-4 py-2 rounded-xl border transition-all cursor-pointer flex items-center gap-2 ${
                 driverMode 
                   ? "bg-amber-500/10 border-amber-500/50 text-amber-600 dark:text-amber-400" 
@@ -218,7 +274,6 @@ export default function WorkspacePage() {
           </button>
         </div>
 
-
         {/* ─── TAB 1: NEW BOOKING REQUEST FORM ─── */}
         {activeTab === "book" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -262,152 +317,149 @@ export default function WorkspacePage() {
                 </div>
               </div>
 
-              <form onSubmit={handleCreateTrip} className="space-y-5">
+              <form onSubmit={handleCreateTrip} className="space-y-4">
                 {/* Pickup Location */}
                 <div>
-                  <label className="text-xs font-mono uppercase font-bold text-text-muted flex items-center gap-1.5 mb-1.5">
-                    <Navigation className="h-3.5 w-3.5 text-emerald-500" />
-                    Pickup Location
-                  </label>
+                  <label className="text-[10px] font-mono font-bold uppercase text-text-muted block mb-1">Pickup Location</label>
                   <select
                     value={pickup}
                     onChange={(e) => setPickup(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-background border border-border-mute text-xs font-medium text-foreground focus:outline-none focus:border-emerald-500"
+                    className="w-full text-xs p-3 bg-background border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500"
                   >
                     {UMAT_CAMPUS_HOTSPOTS.map((spot) => (
                       <option key={spot.id} value={spot.name}>
                         📍 {spot.name} ({spot.description})
                       </option>
                     ))}
-                    <option value="custom">✏️ Other / Custom Spot...</option>
+                    <option value="custom">✍️ Custom Location (Specify below)</option>
                   </select>
+
                   {pickup === "custom" && (
                     <input
                       type="text"
-                      placeholder="Type custom pickup location details..."
+                      placeholder="e.g. Near Faculty of Engineering Block B"
                       value={customPickup}
                       onChange={(e) => setCustomPickup(e.target.value)}
-                      className="mt-2 w-full p-3 rounded-xl bg-background border border-border-mute text-xs text-foreground focus:outline-none focus:border-emerald-500"
+                      className="mt-2 w-full text-xs p-3 bg-background border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500"
+                      required
                     />
                   )}
                 </div>
 
                 {/* Dropoff Location */}
                 <div>
-                  <label className="text-xs font-mono uppercase font-bold text-text-muted flex items-center gap-1.5 mb-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-blue-500" />
-                    Dropoff Location
-                  </label>
+                  <label className="text-[10px] font-mono font-bold uppercase text-text-muted block mb-1">Dropoff Location</label>
                   <select
                     value={dropoff}
                     onChange={(e) => setDropoff(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-background border border-border-mute text-xs font-medium text-foreground focus:outline-none focus:border-emerald-500"
+                    className="w-full text-xs p-3 bg-background border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500"
                   >
                     {UMAT_CAMPUS_HOTSPOTS.map((spot) => (
                       <option key={spot.id} value={spot.name}>
                         📍 {spot.name} ({spot.description})
                       </option>
                     ))}
-                    <option value="custom">✏️ Other / Custom Spot...</option>
+                    <option value="custom">✍️ Custom Location (Specify below)</option>
                   </select>
+
                   {dropoff === "custom" && (
                     <input
                       type="text"
-                      placeholder="Type custom dropoff location details..."
+                      placeholder="e.g. Town Market Station"
                       value={customDropoff}
                       onChange={(e) => setCustomDropoff(e.target.value)}
-                      className="mt-2 w-full p-3 rounded-xl bg-background border border-border-mute text-xs text-foreground focus:outline-none focus:border-emerald-500"
+                      className="mt-2 w-full text-xs p-3 bg-background border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500"
+                      required
                     />
                   )}
                 </div>
 
-                {/* Delivery details if Delivery service */}
-                {serviceType === "delivery" && (
-                  <div className="p-4 rounded-xl bg-background border border-border-mute space-y-3">
-                    <div>
-                      <label className="text-[11px] font-mono font-bold text-text-muted block mb-1">Package Description</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 2 Packs of Jollof from Canteen Vendor 4, Room 204"
-                        value={packageDetails}
-                        onChange={(e) => setPackageDetails(e.target.value)}
-                        className="w-full p-2.5 rounded-lg bg-surface border border-border-mute text-xs text-foreground focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-mono font-bold text-text-muted block mb-1">Recipient Phone Number (Optional)</label>
-                      <input
-                        type="tel"
-                        placeholder="+233 24 000 0000"
-                        value={recipientPhone}
-                        onChange={(e) => setRecipientPhone(e.target.value)}
-                        className="w-full p-2.5 rounded-lg bg-surface border border-border-mute text-xs text-foreground focus:outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Transport Mode Selection */}
+                {/* Transport Mode */}
                 <div>
-                  <label className="text-xs font-mono uppercase font-bold text-text-muted block mb-2">Transport Vehicle</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <label className="text-[10px] font-mono font-bold uppercase text-text-muted block mb-1">Transport Vehicle</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { id: "Taxi / Car", name: "Taxi / Car", icon: Car },
-                      { id: "Bus / Shuttle", name: "Bus Shuttle", icon: Bus },
-                      { id: "Motorbike", name: "Motorbike", icon: Zap },
-                      { id: "E-Bicycle", name: "E-Bicycle", icon: Bike }
-                    ].map((mode) => {
-                      const IconComp = mode.icon;
-                      const isSelected = vehicleType === mode.id;
+                      { type: "Taxi / Car", icon: Car, fare: "GHS 10" },
+                      { type: "Bus / Shuttle", icon: Bus, fare: "GHS 5" },
+                      { type: "Motorbike", icon: Zap, fare: "GHS 7" },
+                      { type: "E-Bicycle", icon: Bike, fare: "GHS 6" },
+                    ].map((v) => {
+                      const Icon = v.icon;
+                      const selected = vehicleType === v.type;
                       return (
                         <button
-                          key={mode.id}
+                          key={v.type}
                           type="button"
-                          onClick={() => setVehicleType(mode.id as any)}
-                          className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
-                            isSelected
+                          onClick={() => setVehicleType(v.type as any)}
+                          className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                            selected
                               ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold"
                               : "border-border-mute bg-background text-text-muted hover:border-zinc-400"
                           }`}
                         >
-                          <IconComp className="h-5 w-5" />
-                          <span className="text-[11px] font-medium text-foreground">{mode.name}</span>
+                          <Icon className="h-4 w-4 mx-auto mb-1" />
+                          <p className="text-[11px] font-bold truncate">{v.type}</p>
+                          <p className="text-[9px] text-text-muted font-mono">{v.fare}</p>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Payment Option */}
-                <div>
-                  <label className="text-xs font-mono uppercase font-bold text-text-muted block mb-2">Payment Method</label>
-                  <div className="grid grid-cols-2 gap-4">
+                {/* Package Details (if delivery) */}
+                {serviceType === "delivery" && (
+                  <div className="space-y-3 pt-2">
+                    <div>
+                      <label className="text-[10px] font-mono font-bold uppercase text-text-muted block mb-1">Package Description</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Canteen takeaway food pack & water bottle"
+                        value={packageDetails}
+                        onChange={(e) => setPackageDetails(e.target.value)}
+                        className="w-full text-xs p-3 bg-background border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-mono font-bold uppercase text-text-muted block mb-1">Recipient Phone (Optional)</label>
+                      <input
+                        type="tel"
+                        placeholder="+233 24 000 0000"
+                        value={recipientPhone}
+                        onChange={(e) => setRecipientPhone(e.target.value)}
+                        className="w-full text-xs p-3 bg-background border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Method */}
+                <div className="pt-2">
+                  <label className="text-[10px] font-mono font-bold uppercase text-text-muted block mb-1">Payment Method</label>
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("momo")}
-                      className={`p-3 rounded-xl border flex items-center gap-2 cursor-pointer ${
+                      className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer ${
                         paymentMethod === "momo"
-                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold"
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                           : "border-border-mute bg-background text-text-muted"
                       }`}
                     >
-                      <div className="flex -space-x-1">
-                        <MtnMoMoLogo className="h-4 w-4" />
-                        <TelecelLogo className="h-4 w-4" />
-                      </div>
-                      <span className="text-xs font-medium text-foreground">MTN / Telecel MoMo</span>
+                      <MtnMoMoLogo className="h-4 w-4" />
+                      MTN MoMo / Telecel
                     </button>
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("cash")}
-                      className={`p-3 rounded-xl border flex items-center gap-2 cursor-pointer ${
+                      className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer ${
                         paymentMethod === "cash"
-                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold"
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                           : "border-border-mute bg-background text-text-muted"
                       }`}
                     >
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="text-xs font-medium text-foreground">Cash on Arrival</span>
+                      <CreditCard className="h-4 w-4" />
+                      Cash on Arrival
                     </button>
                   </div>
                 </div>
@@ -415,41 +467,43 @@ export default function WorkspacePage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
+                  className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md shadow-emerald-600/20 cursor-pointer disabled:opacity-50 mt-4"
                 >
-                  {loading ? "Processing..." : `Confirm & Request Yɛnkɔ ${serviceType === "ride" ? "Rider" : "Courier"}`}
+                  {loading ? "Requesting Dispatch..." : `Confirm & Request ${serviceType === "ride" ? "Ride" : "Delivery"}`}
                 </button>
               </form>
             </div>
 
-            {/* Live Fare & Summary Card */}
-            <div className="space-y-6">
+            {/* Sidebar Summary Card */}
+            <div className="space-y-4">
               <div className="p-6 rounded-2xl bg-surface border border-border-mute space-y-4">
-                <h3 className="text-xs font-mono uppercase font-bold text-text-muted tracking-wider">Fare Summary</h3>
-                
-                <div className="space-y-2 text-xs border-b border-border-mute pb-4">
+                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-muted border-b border-border-mute pb-2">
+                  Fare Summary
+                </h3>
+
+                <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-text-muted">Service Type:</span>
-                    <span className="font-bold text-foreground capitalize">{serviceType}</span>
+                    <span className="font-bold capitalize">{serviceType}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-text-muted">Vehicle:</span>
-                    <span className="font-bold text-foreground">{vehicleType}</span>
+                    <span className="font-bold">{vehicleType}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-text-muted">Estimated Distance:</span>
-                    <span className="font-bold text-foreground">Campus Zone (~1.8 km)</span>
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">Campus Zone (~1.8 km)</span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-baseline pt-2">
+                <div className="border-t border-border-mute pt-3 flex justify-between items-baseline">
                   <span className="text-xs font-mono uppercase font-bold text-text-muted">Estimated Fare</span>
-                  <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                  <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
                     GHS {calculateFare()}
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-700 dark:text-emerald-300 flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>Student discount applied automatically for UMaT Tarkwa campus.</span>
                 </div>
@@ -458,82 +512,86 @@ export default function WorkspacePage() {
           </div>
         )}
 
-
-        {/* ─── TAB 2: ACTIVE REQUESTS ─── */}
+        {/* ─── TAB 2: ACTIVE REQUESTS (DISPATCH QUEUE & DRIVER SIMULATION) ─── */}
         {activeTab === "active" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {activeTrips.length === 0 ? (
               <div className="p-12 text-center border border-dashed border-border-mute rounded-2xl">
-                <Car className="h-10 w-10 mx-auto text-text-muted mb-3" />
-                <h3 className="text-base font-bold text-foreground">No active ride or delivery requests</h3>
-                <p className="text-xs text-text-muted mt-1">Book a new campus ride or delivery to see live status tracking.</p>
+                <p className="text-xs text-text-muted">No active rides or deliveries right now.</p>
                 <button
                   onClick={() => setActiveTab("book")}
-                  className="mt-4 px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-medium text-xs"
+                  className="mt-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  Create New Request
+                  Create a new request →
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 {activeTrips.map((trip) => (
                   <div key={trip.id} className="p-6 rounded-2xl bg-surface border border-border-mute space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-border-mute">
-                      <span className="text-xs font-mono font-bold text-foreground">ID: {trip.id}</span>
-                      <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-md ${
-                        trip.status === "pending" ? "bg-amber-500/10 text-amber-600" :
-                        trip.status === "accepted" ? "bg-blue-500/10 text-blue-600" : "bg-emerald-500/10 text-emerald-600"
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-mute pb-3">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase">Trip ID: {trip.id}</span>
+                        <h4 className="text-sm font-bold text-foreground capitalize">{trip.service_type} Request</h4>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase ${
+                        trip.status === "pending"
+                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                          : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                       }`}>
-                        {trip.status}
+                        {trip.status === "pending" ? "Searching for Rider..." : `Status: ${trip.status}`}
                       </span>
                     </div>
 
-                    <div className="space-y-2 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <span className="text-text-muted font-mono block text-[10px]">PICKUP</span>
-                        <p className="font-bold text-foreground">{trip.pickup_location}</p>
+                        <p className="text-[10px] font-mono font-bold text-text-muted uppercase">Pickup</p>
+                        <p className="font-semibold text-foreground">{trip.pickup_location}</p>
                       </div>
                       <div>
-                        <span className="text-text-muted font-mono block text-[10px]">DROPOFF</span>
-                        <p className="font-bold text-foreground">{trip.dropoff_location}</p>
+                        <p className="text-[10px] font-mono font-bold text-text-muted uppercase">Dropoff</p>
+                        <p className="font-semibold text-foreground">{trip.dropoff_location}</p>
                       </div>
-                      {trip.package_details && (
-                        <div>
-                          <span className="text-text-muted font-mono block text-[10px]">PACKAGE DETAILS</span>
-                          <p className="font-medium text-foreground bg-background p-2 rounded">{trip.package_details}</p>
-                        </div>
-                      )}
                     </div>
 
-                    <div className="pt-2 border-t border-border-mute flex items-center justify-between text-xs">
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">GHS {trip.fare_amount?.toFixed(2)}</span>
-                      <span className="text-text-muted capitalize">{trip.payment_method} ({trip.payment_status})</span>
-                    </div>
+                    {trip.package_details && (
+                      <div className="p-3 rounded-xl bg-background border border-border-mute text-xs">
+                        <span className="text-text-muted font-semibold">Item: </span>
+                        <span>{trip.package_details}</span>
+                      </div>
+                    )}
 
-                    {/* Driver simulation controls */}
-                    <div className="pt-2 flex flex-wrap gap-2">
-                      {trip.status === "pending" && (
+                    <div className="flex items-center justify-between pt-2 border-t border-border-mute text-xs">
+                      <div>
+                        <span className="text-text-muted">Fare: </span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">GHS {trip.fare_amount?.toFixed(2)}</span>
+                      </div>
+
+                      {/* Status Simulation Controls */}
+                      <div className="flex items-center gap-2">
+                        {trip.status === "pending" && (
+                          <button
+                            onClick={() => updateTripStatus(trip.id, "accepted", "Kwaku A. (Campus Shuttle)")}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold cursor-pointer"
+                          >
+                            Accept Request 🚘
+                          </button>
+                        )}
+                        {trip.status === "accepted" && (
+                          <button
+                            onClick={() => updateTripStatus(trip.id, "completed")}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold cursor-pointer"
+                          >
+                            Mark as Completed ✅
+                          </button>
+                        )}
                         <button
-                          onClick={() => updateTripStatus(trip.id, "accepted", "Kwaku M. (Campus Driver)")}
-                          className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-[11px] font-medium cursor-pointer"
+                          onClick={() => updateTripStatus(trip.id, "cancelled")}
+                          className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 text-[11px] font-bold cursor-pointer"
                         >
-                          Simulate Driver Accept 🚘
+                          Cancel
                         </button>
-                      )}
-                      {trip.status === "accepted" && (
-                        <button
-                          onClick={() => updateTripStatus(trip.id, "completed")}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-medium cursor-pointer"
-                        >
-                          Mark as Completed ✅
-                        </button>
-                      )}
-                      <button
-                        onClick={() => updateTripStatus(trip.id, "cancelled")}
-                        className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 text-[11px] font-medium cursor-pointer"
-                      >
-                        Cancel Request
-                      </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -541,7 +599,6 @@ export default function WorkspacePage() {
             )}
           </div>
         )}
-
 
         {/* ─── TAB 3: TRIP HISTORY ─── */}
         {activeTab === "history" && (
@@ -579,7 +636,10 @@ export default function WorkspacePage() {
         )}
       </main>
 
-      <Footer />
+      {/* ─── Clean Dashboard Footer (No Landing Page Marketing Links) ─── */}
+      <footer className="py-6 border-t border-border-mute bg-background/50 text-center text-xs text-text-muted font-mono">
+        © 2026 Yɛnkɔ Campus Logistics Hub. All rights reserved.
+      </footer>
     </div>
   );
 }

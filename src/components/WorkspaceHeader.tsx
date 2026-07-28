@@ -61,15 +61,8 @@ export default function WorkspaceHeader() {
           </span>
         </div>
 
-        {/* Right: User controls, Home link, Theme toggle, Sign Out */}
+        {/* Right: User controls, Theme toggle, Sign Out */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-surface"
-          >
-            <Home className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Landing Page</span>
-          </Link>
 
           {mounted && (
             <button
