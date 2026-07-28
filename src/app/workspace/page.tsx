@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
+import WorkspaceHeader from "@/components/WorkspaceHeader";
 import Footer from "@/components/Footer";
 import { 
   Car, 
@@ -149,7 +149,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans">
-      <Navbar />
+      <WorkspaceHeader />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         {/* Top Header & Driver Mode Switch */}
