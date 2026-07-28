@@ -59,6 +59,18 @@ export default function LoginPage() {
       if (error) {
         toast.error(error.message);
       } else if (data.session) {
+        if (data.session.user) {
+          try {
+            await supabase.from("profiles").upsert({
+              id: data.session.user.id,
+              email: data.session.user.email || email,
+              role: loginRole,
+              is_verified_driver: loginRole === "driver" ? true : undefined,
+              updated_at: new Date().toISOString()
+            });
+          } catch {}
+        }
+
         // Update local session role cache if logged in as driver
         if (typeof window !== "undefined") {
           const existingProfile = localStorage.getItem("yenko_profile");

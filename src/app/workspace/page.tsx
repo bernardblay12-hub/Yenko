@@ -72,6 +72,17 @@ export default function WorkspacePage() {
           if (data.role === "driver") {
             setDriverMode(true);
           }
+        } else if (typeof window !== "undefined") {
+          const localProfileStr = localStorage.getItem("yenko_profile");
+          if (localProfileStr) {
+            try {
+              const parsed = JSON.parse(localProfileStr);
+              setUserProfile(parsed);
+              if (parsed.role === "driver") {
+                setDriverMode(true);
+              }
+            } catch {}
+          }
         }
       });
 

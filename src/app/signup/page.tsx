@@ -72,6 +72,24 @@ export default function SignUpPage() {
       if (error) {
         toast.error(error.message);
       } else {
+        if (data.user) {
+          try {
+            await supabase.from("profiles").upsert({
+              id: data.user.id,
+              email,
+              full_name: fullName,
+              role: accountRole,
+              vehicle_type: accountRole === "driver" ? vehicleType : null,
+              student_id_number: driverIdNumber || "70012345",
+              is_verified_driver: accountRole === "driver",
+              is_available: true,
+              updated_at: new Date().toISOString()
+            });
+          } catch (dbErr) {
+            console.error("Database profile upsert:", dbErr);
+          }
+        }
+
         // Update local session profile cache
         if (typeof window !== "undefined") {
           localStorage.setItem("yenko_profile", JSON.stringify({
