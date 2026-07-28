@@ -27,15 +27,16 @@ export default function LoginPage() {
       const error = urlParams.get("error") || hashParams.get("error");
 
       if (error || errorDesc) {
-        toast.error("Google authentication error: Unable to exchange OAuth code. Please sign in with Email/Password or check Supabase OAuth settings.", {
-          duration: 6000,
+        const detailMsg = errorDesc || error || "OAuth code exchange failed";
+        toast.error(`Google authentication error: ${detailMsg}`, {
+          duration: 8000,
         });
         window.history.replaceState(null, "", window.location.pathname);
       }
     }
 
     if (!supabase) return;
-    supabase.auth.getSession().then((res) => {
+    supabase.auth.getSession().then((res: any) => {
       if (res.data?.session) {
         router.push("/workspace");
       }
@@ -99,7 +100,7 @@ export default function LoginPage() {
     }
     setIsGoogleLoading(true);
     try {
-      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/workspace` : "";
+      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : "";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

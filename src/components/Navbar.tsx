@@ -24,12 +24,12 @@ export default function Navbar() {
     if (!supabase) return;
 
     // Get current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data }: { data: any }) => {
+      setUser(data?.session?.user ?? null);
     });
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((_event: any, session: any) => {
       setUser(session?.user ?? null);
     });
 

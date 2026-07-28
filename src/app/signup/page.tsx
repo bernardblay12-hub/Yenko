@@ -25,7 +25,7 @@ export default function SignUpPage() {
   // If already logged in, redirect to workspace
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then((res) => {
+    supabase.auth.getSession().then((res: any) => {
       if (res.data?.session) {
         router.push("/workspace");
       }
@@ -121,7 +121,7 @@ export default function SignUpPage() {
     }
     setIsGoogleLoading(true);
     try {
-      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/workspace` : "";
+      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : "";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

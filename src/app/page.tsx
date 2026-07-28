@@ -55,8 +55,9 @@ export default function Home() {
       const error = urlParams.get("error") || hashParams.get("error");
 
       if (error || errorDesc) {
-        toast.error("Google authentication error: Unable to exchange OAuth code. Please sign in with Email/Password or verify Supabase OAuth settings.", {
-          duration: 6000,
+        const detailMsg = errorDesc || error || "OAuth code exchange failed";
+        toast.error(`Google authentication error: ${detailMsg}`, {
+          duration: 8000,
         });
         window.history.replaceState(null, "", window.location.pathname);
       }

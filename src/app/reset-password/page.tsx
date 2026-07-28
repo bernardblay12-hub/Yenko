@@ -21,7 +21,7 @@ export default function ResetPasswordPage() {
     if (!supabase) return;
     // Check if there is an active session (Supabase automatically logs in the user
     // when they arrive via recovery link)
-    supabase.auth.getSession().then((res) => {
+    supabase.auth.getSession().then((res: any) => {
       if (!res.data?.session) {
         setHasSession(false);
         toast.error("Invalid or expired password reset session. Please request a new link.");

@@ -20,7 +20,8 @@ export default function WorkspaceHeader() {
     setTheme(isDark ? "dark" : "light");
 
     if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data }: { data: any }) => {
+        const session = data?.session;
         if (session?.user?.user_metadata?.full_name) {
           setUserName(session.user.user_metadata.full_name);
         } else if (session?.user?.email) {
