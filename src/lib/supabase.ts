@@ -77,15 +77,15 @@ export interface CampusLocation {
 // ─── UMaT Tarkwa Campus Hotspots (with GPS Coordinates) ───
 
 export const UMAT_CAMPUS_HOTSPOTS: CampusLocation[] = [
-  { id: "loc-1", name: "Main Gate",               category: "gate",       description: "University Main Entrance Gate",                     lat: 5.3040, lng: -1.9945 },
-  { id: "loc-2", name: "KT Hall (Kofi Annan Hall)", category: "hall",     description: "On-campus Student Residence",                       lat: 5.3010, lng: -1.9920 },
-  { id: "loc-3", name: "SRID Hall",                category: "hall",       description: "School of Railway & Infrastructure Development",    lat: 5.3025, lng: -1.9910 },
-  { id: "loc-4", name: "Gold Refinery Lab",        category: "faculty",    description: "Faculty of Minerals & Petroleum Engineering",       lat: 5.3005, lng: -1.9940 },
-  { id: "loc-5", name: "Library & ICT Complex",    category: "faculty",    description: "Central Library and Computer Labs",                 lat: 5.3020, lng: -1.9935 },
-  { id: "loc-6", name: "University Canteen",        category: "canteen",   description: "Central Student Dining & Food Hub",                 lat: 5.3015, lng: -1.9925 },
-  { id: "loc-7", name: "Town Market Junction",     category: "commercial", description: "Tarkwa Town Shuttle Pickup Point",                  lat: 5.2985, lng: -1.9960 },
-  { id: "loc-8", name: "Administration Block",     category: "faculty",    description: "Vice Chancellor & Registrar Offices",               lat: 5.3030, lng: -1.9930 },
+  { id: "loc-1", name: "Main Gate",               category: "gate",       description: "University Main Entrance Gate",                     lat: 5.2995, lng: -2.0025 },
+  { id: "loc-2", name: "KT Hall (Kofi Annan Hall)", category: "hall",     description: "On-campus Student Residence",                       lat: 5.2970, lng: -2.0010 },
+  { id: "loc-3", name: "SRID Hall",                category: "hall",       description: "School of Railway & Infrastructure Development",    lat: 5.2982, lng: -2.0002 },
+  { id: "loc-4", name: "Gold Refinery Lab",        category: "faculty",    description: "Faculty of Minerals & Petroleum Engineering",       lat: 5.2960, lng: -2.0020 },
+  { id: "loc-5", name: "Library & ICT Complex",    category: "faculty",    description: "Central Library and Computer Labs",                 lat: 5.2976, lng: -2.0015 },
+  { id: "loc-6", name: "University Canteen",        category: "canteen",   description: "Central Student Dining & Food Hub",                 lat: 5.2968, lng: -2.0018 },
+  { id: "loc-7", name: "Town Market Junction",     category: "commercial", description: "Tarkwa Town Shuttle Pickup Point",                  lat: 5.2938, lng: -2.0042 },
+  { id: "loc-8", name: "Administration Block",     category: "faculty",    description: "Vice Chancellor & Registrar Offices",               lat: 5.2990, lng: -2.0018 },
 ];
 
-export const UMAT_CENTER = { lat: 5.3018, lng: -1.9932 };
-export const UMAT_DEFAULT_ZOOM = 16;
+export const UMAT_CENTER = { lat: 5.2974, lng: -2.0019 };
+export const UMAT_DEFAULT_ZOOM = 17;

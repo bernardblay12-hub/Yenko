@@ -282,7 +282,24 @@ export default function WorkspacePage() {
     };
 
     try {
-      const { error } = await (supabase.from("trips" as any) as any).insert(newTrip);
+      let { error } = await (supabase.from("trips" as any) as any).insert(newTrip);
+
+      // Fallback if remote PostgreSQL schema doesn't have distance_km or otp_code column yet
+      if (error && error.message?.includes("column")) {
+        const fallbackTrip = { ...newTrip };
+        delete fallbackTrip.distance_km;
+        if (error.message.includes("otp_code")) delete fallbackTrip.otp_code;
+        if (error.message.includes("pickup_lat")) {
+          delete fallbackTrip.pickup_lat;
+          delete fallbackTrip.pickup_lng;
+          delete fallbackTrip.dropoff_lat;
+          delete fallbackTrip.dropoff_lng;
+        }
+
+        const fallbackRes = await (supabase.from("trips" as any) as any).insert(fallbackTrip);
+        error = fallbackRes.error;
+      }
+
       if (error) {
         toast.error(`Dispatch request failed: ${error.message}`);
       } else {
