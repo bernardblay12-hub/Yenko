@@ -266,14 +266,22 @@ function TerminalContent() {
       return;
     }
 
-    setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const activeUid = session?.user?.id || userId;
+
+    if (!activeUid) {
+      toast.error("Please sign in to confirm a dispatch request.");
+      setLoading(false);
+      return;
+    }
+
     const tripId = generateTripId();
     const otp = generateOTP();
 
     const newTrip: Partial<Trip> = {
       id: tripId,
-      rider_id: userId!,
-      user_id: userId!,
+      rider_id: activeUid,
+      user_id: activeUid,
       service_type: serviceType,
       status: "pending" as TripStatus,
       pickup_location: pickupLocation.name,
@@ -296,11 +304,12 @@ function TerminalContent() {
     try {
       let { error } = await (supabase.from("trips" as any) as any).insert(newTrip);
 
-      // Fallback 1: If rider_id column is missing in PostgreSQL schema, retry with user_id
-      if (error && (error.message?.includes("rider_id") || error.message?.includes("column") || error.message?.includes("schema cache"))) {
+      // Fallback 1: If optional columns are missing in PostgreSQL schema, retry with standard columns
+      if (error && (error.message?.includes("column") || error.message?.includes("schema cache"))) {
         const fallbackTrip1: any = {
           id: tripId,
-          user_id: userId!,
+          rider_id: activeUid,
+          user_id: activeUid,
           service_type: serviceType,
           status: "pending",
           pickup_location: pickupLocation.name,
@@ -317,10 +326,12 @@ function TerminalContent() {
         const res1 = await (supabase.from("trips" as any) as any).insert(fallbackTrip1);
         error = res1.error;
 
-        // Fallback 2: If user_id/vehicle_type or schema cache error occurs, strip vehicle_type & optional columns
+        // Fallback 2: Minimal fallback including RLS user ID fields
         if (error && (error.message?.includes("column") || error.message?.includes("schema cache"))) {
           const fallbackTrip2: any = {
             id: tripId,
+            rider_id: activeUid,
+            user_id: activeUid,
             service_type: serviceType,
             status: "pending",
             pickup_location: pickupLocation.name,
@@ -340,7 +351,7 @@ function TerminalContent() {
         toast.success(`Dispatch request initiated. Searching active drivers...`);
         setPackageDetails("");
         setRecipientPhone("");
-        if (userId) fetchTrips(userId);
+        if (activeUid) fetchTrips(activeUid);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to create dispatch request.");
