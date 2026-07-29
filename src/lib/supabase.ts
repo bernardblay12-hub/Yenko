@@ -42,6 +42,7 @@ export type PaymentStatus = "pending" | "paid" | "cash_on_delivery" | "refunded"
 export interface Trip {
   id: string;
   rider_id: string;
+  user_id?: string;
   driver_id?: string | null;
   service_type: ServiceType;
   status: TripStatus;

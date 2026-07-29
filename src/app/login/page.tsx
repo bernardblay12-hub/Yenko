@@ -38,7 +38,7 @@ export default function LoginPage() {
     if (!supabase) return;
     supabase.auth.getSession().then((res: any) => {
       if (res.data?.session) {
-        router.push("/workspace");
+        router.push("/terminal");
       }
     });
   }, [router]);
@@ -84,7 +84,7 @@ export default function LoginPage() {
         }
 
         toast.success(`Welcome back, bro! Signed in as ${loginRole === "driver" ? "Campus Driver" : "Student Commuter"}.`);
-        router.push("/workspace");
+        router.push("/terminal");
       }
     } catch (err: any) {
       toast.error("An unexpected error occurred. Please try again.");
@@ -100,7 +100,7 @@ export default function LoginPage() {
     }
     setIsGoogleLoading(true);
     try {
-      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/workspace` : "";
+      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/terminal` : "";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

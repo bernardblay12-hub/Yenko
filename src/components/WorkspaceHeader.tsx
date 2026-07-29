@@ -31,7 +31,7 @@ function WorkspaceHeaderNav() {
   // Dynamic Tab Active Indicator
   const currentTab = useMemo(() => {
     if (pathname === "/pricing") return "wallet";
-    if (pathname.includes("/workspace")) {
+    if (pathname.includes("/terminal") || pathname.includes("/workspace")) {
       return searchParams.get("tab") || "dispatch";
     }
     return "dispatch";
@@ -75,11 +75,20 @@ function WorkspaceHeaderNav() {
   };
 
   const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
+    try {
+      if (supabase) {
+        await supabase.auth.signOut({ scope: "local" });
+      }
+    } catch (err) {
+      // Ignore network errors on sign out so local session cleanup always completes
+    } finally {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sb-xzldfxvkjmgkiwhjesoe-auth-token");
+        sessionStorage.clear();
+      }
+      toast.success("Signed out successfully.");
+      router.push("/login");
     }
-    toast.success("Signed out successfully.");
-    router.push("/login");
   };
 
   const getNavStyle = (tabName: string) => {
@@ -95,22 +104,22 @@ function WorkspaceHeaderNav() {
         
         {/* Left: App Logo */}
         <div className="flex items-center gap-3">
-          <Logo href="/workspace" size="md" />
+          <Logo href="/terminal" size="md" />
         </div>
 
         {/* Center Flex: Dynamic Global Navigation Links */}
         <nav className="hidden md:flex items-center gap-1 bg-surface/80 p-1 rounded-full border border-border-mute">
-          <Link href="/workspace?tab=dispatch" className={getNavStyle("dispatch")}>
+          <Link href="/terminal?tab=dispatch" className={getNavStyle("dispatch")}>
             <Navigation className="w-3.5 h-3.5" />
             <span>DISPATCH</span>
           </Link>
 
-          <Link href="/workspace?tab=activity" className={getNavStyle("activity")}>
+          <Link href="/terminal?tab=activity" className={getNavStyle("activity")}>
             <Activity className="w-3.5 h-3.5" />
             <span>ACTIVITY</span>
           </Link>
 
-          <Link href="/workspace?tab=wallet" className={getNavStyle("wallet")}>
+          <Link href="/terminal?tab=wallet" className={getNavStyle("wallet")}>
             <Wallet className="w-3.5 h-3.5" />
             <span>WALLET</span>
           </Link>
@@ -139,7 +148,7 @@ function WorkspaceHeaderNav() {
                 </div>
 
                 <Link
-                  href="/workspace?tab=dispatch"
+                  href="/terminal?tab=dispatch"
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center gap-2 px-3.5 py-2 text-text-muted hover:text-foreground hover:bg-background transition-colors"
                 >
@@ -193,7 +202,7 @@ export default function WorkspaceHeader() {
     <Suspense
       fallback={
         <header className="sticky top-0 z-40 w-full bg-background/90 border-b border-border-mute backdrop-blur-md h-16 flex items-center justify-between px-6">
-          <Logo href="/workspace" size="md" />
+          <Logo href="/terminal" size="md" />
         </header>
       }
     >

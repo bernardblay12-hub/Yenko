@@ -165,7 +165,7 @@ export default function Home() {
             {/* Hero Primary CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 mt-10 w-full sm:w-auto">
               <Link
-                href="/workspace"
+                href="/terminal"
                 className="btn-primary-shimmer flex items-center justify-center gap-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-4 text-sm transition-all shadow-[0_8px_25px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Car className="h-4 w-4 stroke-[2.5]" />
@@ -173,7 +173,7 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4 stroke-[2.5]" />
               </Link>
               <Link
-                href="/workspace"
+                href="/terminal"
                 className="flex items-center justify-center gap-2.5 rounded-xl border border-border-mute bg-surface px-8 py-4 text-sm font-bold text-foreground transition-all hover:bg-background hover:border-emerald-500/40 cursor-pointer shadow-sm"
               >
                 <Package className="h-4 w-4 text-emerald-500 stroke-[2.5]" />
