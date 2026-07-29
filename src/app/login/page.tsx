@@ -36,9 +36,17 @@ export default function LoginPage() {
     }
 
     if (!supabase) return;
-    supabase.auth.getSession().then((res: any) => {
-      if (res.data?.session) {
-        router.push("/terminal");
+    supabase.auth.getSession().then(({ data }: { data: any }) => {
+      const session = data?.session;
+      if (session) {
+        const uid = session.user.id;
+        (supabase.from("profiles" as any) as any).select("role").eq("id", uid).maybeSingle().then(({ data: prof }: { data: any }) => {
+          if (prof?.role === "driver") {
+            router.push("/terminal/driver");
+          } else {
+            router.push("/terminal");
+          }
+        });
       }
     });
   }, [router]);
@@ -84,7 +92,11 @@ export default function LoginPage() {
         }
 
         toast.success(`Welcome back, bro! Signed in as ${loginRole === "driver" ? "Campus Driver" : "Student Commuter"}.`);
-        router.push("/terminal");
+        if (loginRole === "driver") {
+          router.push("/terminal/driver");
+        } else {
+          router.push("/terminal");
+        }
       }
     } catch (err: any) {
       toast.error("An unexpected error occurred. Please try again.");

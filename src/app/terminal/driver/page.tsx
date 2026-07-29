@@ -87,6 +87,40 @@ export default function DriverConsolePage() {
     });
   }, [router]);
 
+  // ─── Realtime Dispatches Broadcast Subscription for Drivers ───
+  useEffect(() => {
+    const channel = supabase
+      .channel("driver-trips-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "trips" },
+        (payload: any) => {
+          if (payload.eventType === "INSERT") {
+            const newTrip = payload.new as any;
+            if (newTrip.status === "pending") {
+              setPendingTrips((prev) => [newTrip, ...prev]);
+              toast.info(`⚡ New Campus Dispatch Broadcast from ${newTrip.pickup_location}!`);
+            }
+          } else if (payload.eventType === "UPDATE") {
+            const updated = payload.new as any;
+            if (updated.status !== "pending") {
+              setPendingTrips((prev) => prev.filter((t) => t.id !== updated.id));
+            }
+            setMyTrips((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+          } else if (payload.eventType === "DELETE") {
+            const deleted = payload.old as any;
+            setPendingTrips((prev) => prev.filter((t) => t.id !== deleted.id));
+            setMyTrips((prev) => prev.filter((t) => t.id !== deleted.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const fetchDriverTrips = async (driverId: string) => {
     setLoading(true);
     try {
