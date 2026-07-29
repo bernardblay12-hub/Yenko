@@ -164,7 +164,7 @@ function DriverConsoleContent() {
   const handleAcceptTrip = async (trip: Trip) => {
     if (!profile) return;
     try {
-      const { error } = await (supabase.from("trips" as any) as any)
+      let { error } = await (supabase.from("trips" as any) as any)
         .update({
           driver_id: profile.id,
           driver_name: profile.full_name || "Campus Driver",
@@ -172,10 +172,21 @@ function DriverConsoleContent() {
         })
         .eq("id", trip.id);
 
+      // Fallback if driver_name column is missing in PostgreSQL schema cache
+      if (error && (error.message?.includes("driver_name") || error.message?.includes("column"))) {
+        const fallbackRes = await (supabase.from("trips" as any) as any)
+          .update({
+            driver_id: profile.id,
+            status: "accepted" as TripStatus,
+          })
+          .eq("id", trip.id);
+        error = fallbackRes.error;
+      }
+
       if (error) {
         toast.error(`Acceptance error: ${error.message}`);
       } else {
-        toast.success(`Dispatch request #${trip.id} accepted! Proceed to pickup node.`);
+        toast.success(`Dispatch request accepted! Proceed to pickup node.`);
         if (profile.id) fetchDriverTrips(profile.id);
       }
     } catch (err: any) {
