@@ -67,7 +67,7 @@ export function useRealtimeTrips(userId: string) {
           });
         }
       )
-      .subscribe((status, err) => {
+      .subscribe((status: any, err?: any) => {
         if (err) console.error("Subscription error:", err);
       });
 

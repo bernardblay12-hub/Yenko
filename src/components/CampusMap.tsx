@@ -136,7 +136,7 @@ export default function CampusMap({
 
       const marker = L.marker([spot.lat, spot.lng], { icon }).addTo(markersRef.current!);
 
-      const label = isPickup ? "📍 PICKUP" : isDropoff ? "🏁 DROPOFF" : spot.category.toUpperCase();
+      const label = isPickup ? "PICKUP NODE" : isDropoff ? "DROPOFF NODE" : spot.category.toUpperCase();
 
       marker.bindPopup(`
         <div style="font-family:Inter,system-ui,sans-serif;min-width:160px;">

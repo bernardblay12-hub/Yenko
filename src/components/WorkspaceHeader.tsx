@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sun, Moon, LogOut, Home, ShieldCheck, User } from "lucide-react";
+import { Sun, Moon, LogOut, ShieldCheck, User, Terminal } from "lucide-react";
 import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -54,17 +54,16 @@ export default function WorkspaceHeader() {
   return (
     <header className="sticky top-0 z-40 w-full bg-background/90 border-b border-border-mute backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Left: App Logo + Campus Badge */}
+        {/* Left: App Logo + Campus Terminal Badge */}
         <div className="flex items-center gap-3">
           <Logo href="/workspace" size="md" />
-          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <ShieldCheck className="w-3 h-3" /> UMaT Hub
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <Terminal className="w-3 h-3 text-emerald-500" /> UMaT Campus Terminal
           </span>
         </div>
 
         {/* Right: User controls, Theme toggle, Sign Out */}
         <div className="flex items-center gap-3">
-
           {mounted && (
             <button
               onClick={toggleTheme}
