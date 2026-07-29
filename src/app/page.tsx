@@ -67,8 +67,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden text-foreground font-sans animate-fade-in">
       {/* ─── SmartStudy Square Grid Mesh Backing ─── */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,185,129,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.08)_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,185,129,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.06)_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] pointer-events-none" />
+      <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
       
       {/* ─── Ambient Concentric Cyber-Rings (Tarkwa Live Driver Radar) ─── */}
       <div className="absolute top-[6%] left-1/2 -translate-x-1/2 w-[48rem] h-[48rem] rounded-full border border-emerald-500/20 pointer-events-none hidden lg:block animate-pulse" />

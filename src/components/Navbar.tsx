@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Sun, Moon, Menu, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import Logo from "@/components/Logo";
 
 export default function Navbar() {
+  const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
@@ -54,14 +55,25 @@ export default function Navbar() {
   };
 
   const handleSignOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    setUser(null);
-    toast.success("Signed out successfully.");
+    try {
+      if (supabase) {
+        await supabase.auth.signOut({ scope: "local" });
+      }
+    } catch (err) {
+      // Ignore network errors on sign out
+    } finally {
+      setUser(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sb-xzldfxvkjmgkiwhjesoe-auth-token");
+        sessionStorage.clear();
+      }
+      toast.success("Signed out successfully.");
+      router.push("/login");
+    }
   };
 
   const navItems = [
-    { name: "Book Ride / Delivery", href: "/workspace" },
+    { name: "Book Ride / Delivery", href: "/terminal" },
     { name: "Hotspots", href: "/features" },
     { name: "Fares & Rates", href: "/pricing" },
     { name: "About Yɛnkɔ", href: "/about" },
@@ -116,10 +128,10 @@ export default function Navbar() {
               {mounted && user ? (
                 <>
                   <Link
-                    href="/workspace"
-                    className="rounded-full border border-zinc-200 dark:border-zinc-800 px-4 py-1.5 text-[11px] font-medium text-zinc-650 hover:text-foreground hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50 transition-colors"
+                    href="/terminal"
+                    className="rounded-full border border-zinc-200 dark:border-zinc-800 px-4 py-1.5 text-[11px] font-semibold text-foreground hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50 transition-colors"
                   >
-                    Workspace
+                    Terminal
                   </Link>
                   <button
                     onClick={handleSignOut}
@@ -149,74 +161,70 @@ export default function Navbar() {
             {/* Mobile hamburger button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-full border border-zinc-200 dark:border-zinc-850 text-zinc-400 hover:text-foreground hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80 transition-colors cursor-pointer active:scale-95"
-              aria-label="Toggle menu"
+              className="p-2 rounded-full text-zinc-500 hover:text-foreground md:hidden cursor-pointer"
+              aria-label="Toggle Menu"
             >
-              {mobileMenuOpen ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Menu className="h-4 w-4" />
-              )}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
-
-        {/* Mobile dropdown menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border-mute bg-background/40 backdrop-blur-lg rounded-b-2xl mobile-menu-enter">
-            <nav className="flex flex-col px-6 py-4 space-y-1">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`text-xs font-medium py-2.5 px-4 rounded-full transition-colors ${
-                      isActive
-                        ? "text-foreground bg-zinc-100 dark:bg-zinc-900 font-semibold"
-                        : "text-zinc-550 dark:text-zinc-450 hover:text-foreground hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80"
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                );
-              })}
-              <div className="border-t border-border-mute my-2" />
-              {mounted && user ? (
-                <>
-                  <Link
-                    href="/workspace"
-                    className="text-xs font-medium py-2.5 px-4 rounded-full text-zinc-550 dark:text-zinc-450 hover:text-foreground hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80 transition-colors"
-                  >
-                    Workspace
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="text-left text-xs font-medium py-2.5 px-4 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <div className="flex flex-col gap-2 pt-1">
-                  <Link
-                    href="/login"
-                    className="flex items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 px-4 py-2.5 text-xs font-medium text-zinc-550 dark:text-zinc-450 hover:text-foreground hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50 transition-colors"
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="flex items-center justify-center rounded-full bg-zinc-950 dark:bg-zinc-50 px-4 py-2.5 text-xs font-medium text-white dark:text-black transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200"
-                  >
-                    Get Started
-                  </Link>
-                </div>
-              )}
-            </nav>
-          </div>
-        )}
       </div>
+
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden px-4 pt-2 pb-4 bg-background border-b border-border-mute shadow-lg animate-fade-in">
+          <div className="flex flex-col gap-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`text-xs font-medium py-2.5 px-4 rounded-full transition-colors ${
+                    isActive
+                      ? "text-foreground bg-zinc-100 dark:bg-zinc-900 font-semibold"
+                      : "text-zinc-550 dark:text-zinc-450 hover:text-foreground hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+            <div className="border-t border-border-mute my-2" />
+            {mounted && user ? (
+              <>
+                <Link
+                  href="/terminal"
+                  className="text-xs font-semibold py-2.5 px-4 rounded-full text-foreground hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80 transition-colors"
+                >
+                  Terminal
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="text-left text-xs font-medium py-2.5 px-4 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2 pt-1">
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 px-4 py-2.5 text-xs font-medium text-zinc-550 dark:text-zinc-450 hover:text-foreground hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50 transition-colors"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex items-center justify-center rounded-full bg-zinc-950 dark:bg-zinc-50 px-4 py-2.5 text-xs font-medium text-white dark:text-black transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200"
+                >
+                  Get Started
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
