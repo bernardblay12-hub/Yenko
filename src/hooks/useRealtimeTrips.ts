@@ -18,12 +18,12 @@ export function useRealtimeTrips(userId: string) {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching trips:", error);
+        if (error.message) console.error("Error fetching trips:", error.message);
       } else if (data) {
         setTrips(data as Trip[]);
       }
-    } catch (err) {
-      console.error("Failed to fetch trips:", err);
+    } catch (err: any) {
+      console.error("Failed to fetch trips:", err?.message || err);
     } finally {
       setLoading(false);
     }

@@ -26,7 +26,9 @@ import {
   Receipt,
   FileText,
   SlidersHorizontal,
-  Compass
+  Compass,
+  Activity,
+  Layers
 } from "lucide-react";
 import {
   supabase,
@@ -70,9 +72,6 @@ export default function WorkspacePage() {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-
-  // ─── Sidebar Activity Tab State ───
-  const [sidebarTab, setSidebarTab] = useState<"active" | "history">("active");
 
   // ─── Booking Form State ───
   const [serviceType, setServiceType] = useState<"ride" | "delivery">("ride");
@@ -217,12 +216,12 @@ export default function WorkspacePage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching trips:", error);
+        if (error.message) console.error("Error fetching trips:", error.message);
       } else if (data) {
         setTrips(data as Trip[]);
       }
-    } catch (err) {
-      console.error("Error fetching trips:", err);
+    } catch (err: any) {
+      console.error("Error fetching trips:", err?.message || err);
     } finally {
       setTripsLoading(false);
     }
@@ -306,7 +305,6 @@ export default function WorkspacePage() {
         toast.success(`Dispatch request initiated. Searching active drivers...`);
         setPackageDetails("");
         setRecipientPhone("");
-        setSidebarTab("active");
         if (userId) fetchTrips(userId);
       }
     } catch (err: any) {
@@ -351,37 +349,13 @@ export default function WorkspacePage() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         
-        {/* ─── Dashboard Top Header & Profile Banner ─── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 mb-6 border-b border-border-mute">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <h1 className="text-xl font-bold tracking-tight text-foreground">
-                Student Dispatch Hub
-              </h1>
-            </div>
-            <p className="text-xs text-text-muted mt-1">
-              On-demand UMaT Tarkwa campus transit & instant package delivery routing.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="px-3.5 py-1.5 rounded-xl bg-surface border border-border-mute flex items-center gap-2 text-xs">
-              <GraduationCap className="w-4 h-4 text-emerald-500" />
-              <span className="font-semibold text-foreground">{userProfile?.full_name || "Bernard Blay"}</span>
-              <span className="text-text-muted">•</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">{userProfile?.student_id_number || "70012345"}</span>
-            </div>
-          </div>
-        </div>
-
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* ═══ ASYMMETRIC SAAS GRID (8 COLS MAIN FEED / 4 COLS SIDEBAR) ═══ */}
         {/* ════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* ─────────────────────────────────────────────────────────────── */}
-          {/* LEFT COLUMN (lg:col-span-8) — PRIMARY INTERACTIVE CANVAS */}
+          {/* LEFT COLUMN (lg:col-span-8) — PRIMARY INTERACTIVE WORKSPACE */}
           {/* ─────────────────────────────────────────────────────────────── */}
           <div className="lg:col-span-8 space-y-6">
 
@@ -391,7 +365,7 @@ export default function WorkspacePage() {
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4 text-emerald-500" />
                   <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                    Route Node Selection
+                    Route Selection
                   </h2>
                 </div>
                 <span className="text-[11px] text-text-muted font-mono">UMaT Campus Network</span>
@@ -452,7 +426,7 @@ export default function WorkspacePage() {
                     onClick={() => setMapSelectionMode("pickup")}
                     className={`text-[10px] font-semibold px-3 py-1 rounded-full cursor-pointer transition-all ${
                       mapSelectionMode === "pickup"
-                        ? "bg-emerald-500 text-white"
+                        ? "bg-emerald-500 text-white shadow-xs"
                         : "bg-background border border-border-mute text-text-muted hover:text-foreground"
                     }`}
                   >
@@ -463,7 +437,7 @@ export default function WorkspacePage() {
                     onClick={() => setMapSelectionMode("dropoff")}
                     className={`text-[10px] font-semibold px-3 py-1 rounded-full cursor-pointer transition-all ${
                       mapSelectionMode === "dropoff"
-                        ? "bg-red-500 text-white"
+                        ? "bg-red-500 text-white shadow-xs"
                         : "bg-background border border-border-mute text-text-muted hover:text-foreground"
                     }`}
                   >
@@ -472,7 +446,7 @@ export default function WorkspacePage() {
                 </div>
               </div>
 
-              {/* Leaflet Map Canvas */}
+              {/* Leaflet Map Canvas Container */}
               <CampusMap
                 pickup={pickupLocation}
                 dropoff={dropoffLocation}
@@ -481,9 +455,9 @@ export default function WorkspacePage() {
                 height="340px"
               />
 
-              {/* 3. Hotspot Quick-Pills */}
+              {/* 3. Quick Action Hotspot Pills Row */}
               <div className="flex items-center gap-2 overflow-x-auto pt-1 scrollbar-none">
-                <span className="text-[10px] font-semibold text-text-muted uppercase shrink-0">Quick Shortcuts:</span>
+                <span className="text-[10px] font-semibold text-text-muted uppercase shrink-0">Campus Shortcuts:</span>
                 {UMAT_CAMPUS_HOTSPOTS.map((spot) => {
                   const isPickup = pickupLocation?.id === spot.id;
                   const isDropoff = dropoffLocation?.id === spot.id;
@@ -520,7 +494,7 @@ export default function WorkspacePage() {
             {/* 4. Vehicle & Service Options Card */}
             <div className="bg-surface rounded-xl border border-border-mute p-5 shadow-xs space-y-5">
               
-              {/* Service Type Toggle */}
+              {/* Service Type Selection */}
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted block mb-2">Service Type</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -536,7 +510,7 @@ export default function WorkspacePage() {
                     <Car className="h-5 w-5 stroke-[2]" />
                     <div className="text-left">
                       <p className="text-xs font-bold text-foreground">Passenger Ride</p>
-                      <p className="text-[10px] text-text-muted">Travel across campus & Tarkwa town</p>
+                      <p className="text-[10px] text-text-muted">Direct transit across campus & Tarkwa town</p>
                     </div>
                   </button>
 
@@ -552,7 +526,7 @@ export default function WorkspacePage() {
                     <Package className="h-5 w-5 stroke-[2]" />
                     <div className="text-left">
                       <p className="text-xs font-bold text-foreground">Package Delivery</p>
-                      <p className="text-[10px] text-text-muted">Food, books, laundry to your room</p>
+                      <p className="text-[10px] text-text-muted">Food, books, laundry delivered to room</p>
                     </div>
                   </button>
                 </div>
@@ -628,11 +602,11 @@ export default function WorkspacePage() {
           </div>
 
           {/* ─────────────────────────────────────────────────────────────── */}
-          {/* RIGHT COLUMN (lg:col-span-4) — STICKY DISPATCH & TELEMETRY SIDEBAR */}
+          {/* RIGHT COLUMN (lg:col-span-4) — PERSISTENT CONTEXTUAL SIDEBAR */}
           {/* ─────────────────────────────────────────────────────────────── */}
           <div className="lg:col-span-4 space-y-6">
 
-            {/* 1. Sticky Fare Breakdown & Dispatch Confirmation Card */}
+            {/* 1. Sticky Dispatch Summary Widget */}
             <div className="bg-surface rounded-xl border border-border-mute p-5 shadow-xs space-y-5 sticky top-20">
               <div className="flex items-center justify-between border-b border-border-mute pb-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
@@ -711,77 +685,33 @@ export default function WorkspacePage() {
               </form>
             </div>
 
-            {/* 2. Embedded Activity Telemetry Card */}
+            {/* 2. Persistent Active Tracking & Activity Telemetry Card */}
             <div className="bg-surface rounded-xl border border-border-mute p-5 shadow-xs space-y-4">
-              
-              {/* Telemetry Tabs */}
-              <div className="flex border-b border-border-mute pb-3 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setSidebarTab("active")}
-                  className={`text-xs font-bold transition-colors border-b-2 pb-1 cursor-pointer flex items-center gap-1.5 ${
-                    sidebarTab === "active"
-                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                      : "border-transparent text-text-muted hover:text-foreground"
-                  }`}
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  Active ({activeTrips.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSidebarTab("history")}
-                  className={`text-xs font-bold transition-colors border-b-2 pb-1 cursor-pointer flex items-center gap-1.5 ${
-                    sidebarTab === "history"
-                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                      : "border-transparent text-text-muted hover:text-foreground"
-                  }`}
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  History ({pastTrips.length})
-                </button>
+              <div className="flex items-center justify-between border-b border-border-mute pb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-emerald-500" />
+                  Active Telemetry
+                </h3>
+                <span className="text-[10px] font-mono font-bold text-text-muted">
+                  {activeTrips.length} Active
+                </span>
               </div>
 
-              {/* Tab 1: Active Dispatches */}
-              {sidebarTab === "active" && (
-                <div className="space-y-3">
-                  {tripsLoading ? (
-                    <div className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin text-emerald-500 mx-auto" /></div>
-                  ) : activeTrips.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-text-muted">
-                      No active dispatches right now.
-                    </div>
-                  ) : (
-                    activeTrips.map((trip) => (
-                      <TripTracker key={trip.id} trip={trip} onCancel={handleCancelTrip} />
-                    ))
-                  )}
+              {tripsLoading ? (
+                <div className="py-6 text-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-emerald-500 mx-auto" />
+                </div>
+              ) : activeTrips.length === 0 ? (
+                <div className="py-6 text-center text-xs text-text-muted border border-dashed border-border-mute rounded-xl p-4">
+                  No active dispatches right now.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeTrips.map((trip) => (
+                    <TripTracker key={trip.id} trip={trip} onCancel={handleCancelTrip} />
+                  ))}
                 </div>
               )}
-
-              {/* Tab 2: Trip History */}
-              {sidebarTab === "history" && (
-                <div className="space-y-2.5">
-                  {tripsLoading ? (
-                    <div className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin text-emerald-500 mx-auto" /></div>
-                  ) : pastTrips.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-text-muted">
-                      No completed trip history yet.
-                    </div>
-                  ) : (
-                    pastTrips.map((t) => (
-                      <div key={t.id} className="p-3 rounded-lg bg-background border border-border-mute space-y-1 text-xs">
-                        <div className="flex items-center justify-between font-mono">
-                          <span className="font-bold text-foreground">{t.id}</span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">GHS {t.fare_amount?.toFixed(2)}</span>
-                        </div>
-                        <p className="text-text-muted truncate">{t.pickup_location} → {t.dropoff_location}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-
             </div>
 
           </div>
