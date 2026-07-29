@@ -28,13 +28,13 @@ function WorkspaceHeaderNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const isDriverRoute = pathname.includes("/driver");
+  const basePath = isDriverRoute ? "/terminal/driver" : "/terminal";
+
   // Dynamic Tab Active Indicator
   const currentTab = useMemo(() => {
     if (pathname === "/pricing") return "wallet";
-    if (pathname.includes("/terminal") || pathname.includes("/workspace")) {
-      return searchParams.get("tab") || "dispatch";
-    }
-    return "dispatch";
+    return searchParams.get("tab") || "dispatch";
   }, [pathname, searchParams]);
 
   useEffect(() => {
@@ -104,24 +104,24 @@ function WorkspaceHeaderNav() {
         
         {/* Left: App Logo */}
         <div className="flex items-center gap-3">
-          <Logo href="/terminal" size="md" />
+          <Logo href={basePath} size="md" />
         </div>
 
         {/* Center Flex: Dynamic Global Navigation Links */}
         <nav className="hidden md:flex items-center gap-1 bg-surface/80 p-1 rounded-full border border-border-mute">
-          <Link href="/terminal?tab=dispatch" className={getNavStyle("dispatch")}>
+          <Link href={`${basePath}?tab=dispatch`} className={getNavStyle("dispatch")}>
             <Navigation className="w-3.5 h-3.5" />
             <span>DISPATCH</span>
           </Link>
 
-          <Link href="/terminal?tab=activity" className={getNavStyle("activity")}>
+          <Link href={`${basePath}?tab=activity`} className={getNavStyle("activity")}>
             <Activity className="w-3.5 h-3.5" />
             <span>ACTIVITY</span>
           </Link>
 
-          <Link href="/terminal?tab=wallet" className={getNavStyle("wallet")}>
+          <Link href={`${basePath}?tab=wallet`} className={getNavStyle("wallet")}>
             <Wallet className="w-3.5 h-3.5" />
-            <span>WALLET</span>
+            <span>{isDriverRoute ? "EARNINGS" : "WALLET"}</span>
           </Link>
         </nav>
 
@@ -144,11 +144,11 @@ function WorkspaceHeaderNav() {
               <div className="absolute right-0 mt-2 w-52 rounded-xl bg-surface border border-border-mute shadow-lg py-1.5 z-50 text-xs font-medium space-y-0.5">
                 <div className="px-3.5 py-2 border-b border-border-mute">
                   <p className="font-bold text-foreground truncate">{userName}</p>
-                  <p className="text-[10px] text-text-muted font-mono">UMaT Commuter</p>
+                  <p className="text-[10px] text-text-muted font-mono">{isDriverRoute ? "Verified Campus Driver" : "UMaT Commuter"}</p>
                 </div>
 
                 <Link
-                  href="/terminal?tab=dispatch"
+                  href={`${basePath}?tab=dispatch`}
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center gap-2 px-3.5 py-2 text-text-muted hover:text-foreground hover:bg-background transition-colors"
                 >

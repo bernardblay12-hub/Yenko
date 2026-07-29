@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import WorkspaceHeader from "@/components/WorkspaceHeader";
 import {
@@ -23,7 +23,9 @@ import {
   UserCheck,
   Check,
   X,
-  Power
+  Power,
+  RefreshCw,
+  Wallet
 } from "lucide-react";
 import {
   supabase,
@@ -33,8 +35,10 @@ import {
 } from "@/lib/supabase";
 import { toast } from "sonner";
 
-export default function DriverConsolePage() {
+function DriverConsoleContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTabParam = searchParams.get("tab") || "dispatch";
 
   // ─── Driver State ───
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -42,7 +46,6 @@ export default function DriverConsolePage() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [enteredOtp, setEnteredOtp] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<"active" | "earnings">("active");
 
   // ─── Dispatches State ───
   const [pendingTrips, setPendingTrips] = useState<Trip[]>([]);
@@ -124,7 +127,6 @@ export default function DriverConsolePage() {
   const fetchDriverTrips = async (driverId: string) => {
     setLoading(true);
     try {
-      // Pending dispatches available for broadcast acceptance
       const { data: pending } = await (supabase.from("trips" as any) as any)
         .select("*")
         .eq("status", "pending")
@@ -132,7 +134,6 @@ export default function DriverConsolePage() {
 
       if (pending) setPendingTrips(pending as Trip[]);
 
-      // Driver's assigned trips
       const { data: assigned } = await (supabase.from("trips" as any) as any)
         .select("*")
         .eq("driver_id", driverId)
@@ -252,7 +253,7 @@ export default function DriverConsolePage() {
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
 
-        {/* 1. Driver Duty Header Banner */}
+        {/* Driver Duty Header Banner */}
         <div className="bg-surface rounded-xl border border-border-mute p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold">
@@ -282,157 +283,257 @@ export default function DriverConsolePage() {
           </button>
         </div>
 
-        {/* 2. Driver SaaS Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ═══ VIEW 1: DRIVER DISPATCH CONSOLE (`?tab=dispatch`) ═══ */}
+        {activeTabParam === "dispatch" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* Left Column (lg:col-span-8): Active & Available Dispatches */}
-          <div className="lg:col-span-8 space-y-6">
+            {/* Left Column (lg:col-span-8): Active & Available Dispatches */}
+            <div className="lg:col-span-8 space-y-6">
 
-            {/* Active Ride Verification Card */}
-            {activeTrip && (
-              <div className="bg-surface rounded-xl border-2 border-emerald-500/50 p-6 shadow-md space-y-5">
-                <div className="flex items-center justify-between border-b border-border-mute pb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" />
-                    Active Assigned Dispatch (#{activeTrip.id})
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    Status: {activeTrip.status}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="p-3 bg-background rounded-lg border border-border-mute">
-                    <span className="text-[10px] font-semibold text-text-muted uppercase block">Pickup Node</span>
-                    <strong className="text-foreground text-sm font-semibold">{activeTrip.pickup_location}</strong>
+              {/* Active Ride Verification Card */}
+              {activeTrip && (
+                <div className="bg-surface rounded-xl border-2 border-emerald-500/50 p-6 shadow-md space-y-5">
+                  <div className="flex items-center justify-between border-b border-border-mute pb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4" />
+                      Active Assigned Dispatch (#{activeTrip.id})
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      Status: {activeTrip.status}
+                    </span>
                   </div>
-                  <div className="p-3 bg-background rounded-lg border border-border-mute">
-                    <span className="text-[10px] font-semibold text-text-muted uppercase block">Dropoff Node</span>
-                    <strong className="text-foreground text-sm font-semibold">{activeTrip.dropoff_location}</strong>
-                  </div>
-                </div>
 
-                {/* OTP Verification Input Form */}
-                {activeTrip.status === "accepted" && (
-                  <form onSubmit={handleVerifyOtp} className="p-4 rounded-xl bg-background border border-border-mute space-y-3">
-                    <label className="text-xs font-bold text-foreground block">
-                      Enter Student Commuter Verification OTP:
-                    </label>
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        maxLength={4}
-                        placeholder="4-Digit OTP"
-                        value={enteredOtp}
-                        onChange={(e) => setEnteredOtp(e.target.value)}
-                        className="flex-1 text-center font-mono text-lg tracking-widest p-2.5 bg-surface border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500 font-bold"
-                        required
-                      />
-                      <button
-                        type="submit"
-                        disabled={isVerifyingOtp}
-                        className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                      >
-                        {isVerifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify OTP & Start Transit"}
-                      </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div className="p-3 bg-background rounded-lg border border-border-mute">
+                      <span className="text-[10px] font-semibold text-text-muted uppercase block">Pickup Node</span>
+                      <strong className="text-foreground text-sm font-semibold">{activeTrip.pickup_location}</strong>
                     </div>
-                  </form>
-                )}
+                    <div className="p-3 bg-background rounded-lg border border-border-mute">
+                      <span className="text-[10px] font-semibold text-text-muted uppercase block">Dropoff Node</span>
+                      <strong className="text-foreground text-sm font-semibold">{activeTrip.dropoff_location}</strong>
+                    </div>
+                  </div>
 
-                {/* Complete Trip Action */}
-                {activeTrip.status === "in_progress" && (
-                  <button
-                    onClick={handleCompleteTrip}
-                    className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Complete Dispatch (Collect GHS {activeTrip.fare_amount.toFixed(2)})</span>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Broadcast Available Requests */}
-            <div className="bg-surface rounded-xl border border-border-mute p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-border-mute pb-3">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-                  <Navigation className="w-4 h-4 text-emerald-500" />
-                  Available Campus Broadcast Requests ({pendingTrips.length})
-                </h2>
-              </div>
-
-              {!isOnline ? (
-                <div className="p-8 text-center border border-dashed border-border-mute rounded-xl space-y-2">
-                  <Power className="w-8 h-8 text-text-muted mx-auto" />
-                  <p className="text-xs font-semibold text-text-muted">You are currently offline.</p>
-                  <p className="text-[11px] text-text-muted">Toggle your status to ONLINE above to receive dispatch broadcasts.</p>
-                </div>
-              ) : pendingTrips.length === 0 ? (
-                <div className="p-8 text-center border border-dashed border-border-mute rounded-xl text-xs text-text-muted">
-                  No active student dispatch requests waiting in broadcast queue.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pendingTrips.map((t) => (
-                    <div key={t.id} className="p-4 rounded-xl bg-background border border-border-mute flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-foreground">{t.id}</span>
-                          <span className="capitalize text-text-muted">• {t.service_type}</span>
-                          <span className="text-text-muted">• {t.vehicle_type}</span>
-                        </div>
-                        <p className="text-text-muted mt-1">
-                          Pickup: <strong className="text-foreground">{t.pickup_location}</strong> → Dropoff: <strong className="text-foreground">{t.dropoff_location}</strong>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                          GHS {t.fare_amount?.toFixed(2)}
-                        </span>
+                  {/* OTP Verification Input Form */}
+                  {activeTrip.status === "accepted" && (
+                    <form onSubmit={handleVerifyOtp} className="p-4 rounded-xl bg-background border border-border-mute space-y-3">
+                      <label className="text-xs font-bold text-foreground block">
+                        Enter Student Commuter Verification OTP:
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="text"
+                          maxLength={4}
+                          placeholder="4-Digit OTP"
+                          value={enteredOtp}
+                          onChange={(e) => setEnteredOtp(e.target.value)}
+                          className="flex-1 text-center font-mono text-lg tracking-widest p-2.5 bg-surface border border-border-mute rounded-xl text-foreground outline-none focus:border-emerald-500 font-bold"
+                          required
+                        />
                         <button
-                          onClick={() => handleAcceptTrip(t)}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+                          type="submit"
+                          disabled={isVerifyingOtp}
+                          className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-2"
                         >
-                          Accept Broadcast
+                          {isVerifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify OTP & Start Transit"}
                         </button>
                       </div>
-                    </div>
-                  ))}
+                    </form>
+                  )}
+
+                  {/* Complete Trip Action */}
+                  {activeTrip.status === "in_progress" && (
+                    <button
+                      onClick={handleCompleteTrip}
+                      className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span>Complete Dispatch (Collect GHS {activeTrip.fare_amount.toFixed(2)})</span>
+                    </button>
+                  )}
                 </div>
               )}
+
+              {/* Broadcast Available Requests */}
+              <div className="bg-surface rounded-xl border border-border-mute p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-border-mute pb-3">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                    <Navigation className="w-4 h-4 text-emerald-500" />
+                    Available Campus Broadcast Requests ({pendingTrips.length})
+                  </h2>
+                </div>
+
+                {!isOnline ? (
+                  <div className="p-8 text-center border border-dashed border-border-mute rounded-xl space-y-2">
+                    <Power className="w-8 h-8 text-text-muted mx-auto" />
+                    <p className="text-xs font-semibold text-text-muted">You are currently offline.</p>
+                    <p className="text-[11px] text-text-muted">Toggle your status to ONLINE above to receive dispatch broadcasts.</p>
+                  </div>
+                ) : pendingTrips.length === 0 ? (
+                  <div className="p-8 text-center border border-dashed border-border-mute rounded-xl text-xs text-text-muted">
+                    No active student dispatch requests waiting in broadcast queue.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingTrips.map((t) => (
+                      <div key={t.id} className="p-4 rounded-xl bg-background border border-border-mute flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-foreground">{t.id}</span>
+                            <span className="capitalize text-text-muted">• {t.service_type}</span>
+                            <span className="text-text-muted">• {t.vehicle_type}</span>
+                          </div>
+                          <p className="text-text-muted mt-1">
+                            Pickup: <strong className="text-foreground">{t.pickup_location}</strong> → Dropoff: <strong className="text-foreground">{t.dropoff_location}</strong>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                            GHS {t.fare_amount?.toFixed(2)}
+                          </span>
+                          <button
+                            onClick={() => handleAcceptTrip(t)}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+                          >
+                            Accept Broadcast
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Right Column (lg:col-span-4): Driver Telemetry & Earnings */}
+            <div className="lg:col-span-4 space-y-6">
+
+              {/* Daily Earnings Card */}
+              <div className="bg-surface rounded-xl border border-border-mute p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-border-mute pb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-emerald-500" />
+                    Today's Driver Earnings
+                  </h3>
+                </div>
+
+                <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                  <p className="text-[10px] font-mono font-bold uppercase text-emerald-600 dark:text-emerald-400">Total Net Revenue Today</p>
+                  <p className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                    GHS {todayEarnings.toFixed(2)}
+                  </p>
+                </div>
+
+                <div className="space-y-2 text-xs pt-2">
+                  <div className="flex justify-between text-text-muted"><span>Completed Trips Today:</span><strong className="text-foreground font-mono">{completedTrips.length}</strong></div>
+                  <div className="flex justify-between text-text-muted"><span>Payout Gateway:</span><strong className="text-foreground font-mono">MTN Mobile Money</strong></div>
+                </div>
+              </div>
+
             </div>
 
           </div>
+        )}
 
-          {/* Right Column (lg:col-span-4): Driver Telemetry & Earnings */}
-          <div className="lg:col-span-4 space-y-6">
-
-            {/* Daily Earnings Card */}
+        {/* ═══ VIEW 2: DRIVER TRIP HISTORY CENTER (`?tab=activity`) ═══ */}
+        {activeTabParam === "activity" && (
+          <div className="max-w-5xl mx-auto space-y-6">
             <div className="bg-surface rounded-xl border border-border-mute p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-border-mute pb-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-emerald-500" />
-                  Today's Driver Earnings
-                </h3>
+              <div className="flex items-center justify-between border-b border-border-mute pb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-emerald-500" />
+                    Driver Completed Rides & Activity History
+                  </h2>
+                  <p className="text-xs text-text-muted mt-1">Full record of your accepted and completed campus dispatches.</p>
+                </div>
+                <button
+                  onClick={() => profile?.id && fetchDriverTrips(profile.id)}
+                  className="px-3 py-1.5 rounded-lg border border-border-mute text-xs font-semibold text-text-muted hover:text-foreground hover:bg-background transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Refresh History</span>
+                </button>
               </div>
 
-              <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                <p className="text-[10px] font-mono font-bold uppercase text-emerald-600 dark:text-emerald-400">Total Net Revenue Today</p>
-                <p className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">
-                  GHS {todayEarnings.toFixed(2)}
-                </p>
-              </div>
-
-              <div className="space-y-2 text-xs pt-2">
-                <div className="flex justify-between text-text-muted"><span>Completed Trips Today:</span><strong className="text-foreground font-mono">{completedTrips.length}</strong></div>
-                <div className="flex justify-between text-text-muted"><span>Payout Gateway:</span><strong className="text-foreground font-mono">MTN Mobile Money</strong></div>
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted">Completed Dispatches ({completedTrips.length})</h3>
+                {completedTrips.length === 0 ? (
+                  <div className="p-8 text-center border border-dashed border-border-mute rounded-xl text-xs text-text-muted">
+                    No completed ride history recorded today yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {completedTrips.map((t) => (
+                      <div key={t.id} className="p-4 rounded-xl bg-background border border-border-mute flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-foreground">{t.id}</span>
+                            <span className="capitalize text-text-muted">• {t.service_type}</span>
+                            <span className="text-text-muted">• {t.vehicle_type}</span>
+                          </div>
+                          <p className="text-text-muted mt-1">
+                            From <strong className="text-foreground">{t.pickup_location}</strong> to <strong className="text-foreground">{t.dropoff_location}</strong>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                            GHS {t.fare_amount?.toFixed(2)}
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                            Completed
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-
           </div>
+        )}
 
-        </div>
+        {/* ═══ VIEW 3: DRIVER EARNINGS & PAYOUTS (`?tab=wallet`) ═══ */}
+        {activeTabParam === "wallet" && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-surface rounded-xl border border-border-mute p-6 shadow-xs space-y-6">
+              <div className="flex items-center justify-between border-b border-border-mute pb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-emerald-500" />
+                    Driver Revenue & Mobile Money Payouts
+                  </h2>
+                  <p className="text-xs text-text-muted mt-1">Track net earnings and automated MoMo wallet settlements.</p>
+                </div>
+              </div>
+
+              {/* Earnings Card */}
+              <div className="p-6 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-mono uppercase tracking-wider text-emerald-100 font-semibold">Total Revenue Earned Today</p>
+                  <p className="text-3xl font-black font-mono mt-1">GHS {todayEarnings.toFixed(2)}</p>
+                </div>
+                <div className="p-3 bg-white/10 rounded-full backdrop-blur-md">
+                  <DollarSign className="w-8 h-8 text-white" />
+                </div>
+              </div>
+
+              <div className="p-5 rounded-xl bg-background border border-border-mute space-y-3 text-xs">
+                <h3 className="font-bold text-foreground uppercase tracking-wider">Automated Daily Payout Settings</h3>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-text-muted">Settlement Account:</span>
+                  <strong className="text-foreground font-mono">MTN Mobile Money ({profile?.phone || "024-XXX-XXXX"})</strong>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted">Payout Frequency:</span>
+                  <strong className="text-emerald-500 font-bold">Instant / Daily 8:00 PM</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </main>
 
@@ -440,5 +541,22 @@ export default function DriverConsolePage() {
         © 2026 Yɛnkɔ Campus Logistics. All rights reserved.
       </footer>
     </div>
+  );
+}
+
+export default function DriverConsolePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+            <p className="text-xs font-medium text-text-muted">Loading Driver Console...</p>
+          </div>
+        </div>
+      }
+    >
+      <DriverConsoleContent />
+    </Suspense>
   );
 }
