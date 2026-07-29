@@ -43,6 +43,7 @@ export interface Trip {
   id: string;
   rider_id: string;
   user_id?: string;
+  student_id?: string;
   driver_id?: string | null;
   service_type: ServiceType;
   status: TripStatus;

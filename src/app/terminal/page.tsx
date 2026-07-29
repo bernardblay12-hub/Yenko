@@ -278,10 +278,13 @@ function TerminalContent() {
     const tripId = generateTripId();
     const otp = generateOTP();
 
+    const studentIdVal = userProfile?.student_id_number || activeUid;
+
     const newTrip: Partial<Trip> = {
       id: tripId,
       rider_id: activeUid,
       user_id: activeUid,
+      student_id: studentIdVal,
       service_type: serviceType,
       status: "pending" as TripStatus,
       pickup_location: pickupLocation.name,
@@ -310,6 +313,7 @@ function TerminalContent() {
           id: tripId,
           rider_id: activeUid,
           user_id: activeUid,
+          student_id: studentIdVal,
           service_type: serviceType,
           status: "pending",
           pickup_location: pickupLocation.name,
@@ -326,12 +330,13 @@ function TerminalContent() {
         const res1 = await (supabase.from("trips" as any) as any).insert(fallbackTrip1);
         error = res1.error;
 
-        // Fallback 2: Minimal fallback including RLS user ID fields
+        // Fallback 2: Minimal fallback including student_id & RLS user ID fields
         if (error && (error.message?.includes("column") || error.message?.includes("schema cache"))) {
           const fallbackTrip2: any = {
             id: tripId,
             rider_id: activeUid,
             user_id: activeUid,
+            student_id: studentIdVal,
             service_type: serviceType,
             status: "pending",
             pickup_location: pickupLocation.name,
