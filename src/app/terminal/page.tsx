@@ -317,7 +317,7 @@ function TerminalContent() {
         const res1 = await (supabase.from("trips" as any) as any).insert(fallbackTrip1);
         error = res1.error;
 
-        // Fallback 2: If user_id is also missing or column schema error occurs, insert basic fields
+        // Fallback 2: If user_id/vehicle_type or schema cache error occurs, strip vehicle_type & optional columns
         if (error && (error.message?.includes("column") || error.message?.includes("schema cache"))) {
           const fallbackTrip2: any = {
             id: tripId,
@@ -325,7 +325,6 @@ function TerminalContent() {
             status: "pending",
             pickup_location: pickupLocation.name,
             dropoff_location: dropoffLocation.name,
-            vehicle_type: vehicleType,
             fare_amount: fare,
             created_at: new Date().toISOString(),
           };
