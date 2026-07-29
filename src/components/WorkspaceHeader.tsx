@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Sun,
   Moon,
@@ -18,14 +18,24 @@ import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
-export default function WorkspaceHeader() {
+function WorkspaceHeaderNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("light");
   const [userName, setUserName] = useState("Bernard Nokye");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic Tab Active Indicator
+  const currentTab = useMemo(() => {
+    if (pathname === "/pricing") return "wallet";
+    if (pathname.includes("/workspace")) {
+      return searchParams.get("tab") || "dispatch";
+    }
+    return "dispatch";
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     setMounted(true);
@@ -72,6 +82,13 @@ export default function WorkspaceHeader() {
     router.push("/login");
   };
 
+  const getNavStyle = (tabName: string) => {
+    const isActive = currentTab === tabName;
+    return isActive
+      ? "bg-emerald-500 text-white font-bold shadow-xs px-4 py-1.5 rounded-full text-xs tracking-wider transition-all flex items-center gap-1.5"
+      : "text-text-muted hover:text-foreground hover:bg-background/50 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5";
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full bg-background/90 border-b border-border-mute backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -81,40 +98,19 @@ export default function WorkspaceHeader() {
           <Logo href="/workspace" size="md" />
         </div>
 
-        {/* Center Flex: Global Navigation Links */}
+        {/* Center Flex: Dynamic Global Navigation Links */}
         <nav className="hidden md:flex items-center gap-1 bg-surface/80 p-1 rounded-full border border-border-mute">
-          <Link
-            href="/workspace"
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 ${
-              pathname === "/workspace"
-                ? "bg-emerald-500 text-white font-bold shadow-xs"
-                : "text-text-muted hover:text-foreground hover:bg-background/50"
-            }`}
-          >
+          <Link href="/workspace?tab=dispatch" className={getNavStyle("dispatch")}>
             <Navigation className="w-3.5 h-3.5" />
             <span>DISPATCH</span>
           </Link>
 
-          <Link
-            href="/workspace?tab=activity"
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 ${
-              pathname.includes("activity")
-                ? "bg-emerald-500 text-white font-bold shadow-xs"
-                : "text-text-muted hover:text-foreground hover:bg-background/50"
-            }`}
-          >
+          <Link href="/workspace?tab=activity" className={getNavStyle("activity")}>
             <Activity className="w-3.5 h-3.5" />
             <span>ACTIVITY</span>
           </Link>
 
-          <Link
-            href="/pricing"
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 ${
-              pathname === "/pricing"
-                ? "bg-emerald-500 text-white font-bold shadow-xs"
-                : "text-text-muted hover:text-foreground hover:bg-background/50"
-            }`}
-          >
+          <Link href="/workspace?tab=wallet" className={getNavStyle("wallet")}>
             <Wallet className="w-3.5 h-3.5" />
             <span>WALLET</span>
           </Link>
@@ -143,7 +139,7 @@ export default function WorkspaceHeader() {
                 </div>
 
                 <Link
-                  href="/workspace"
+                  href="/workspace?tab=dispatch"
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center gap-2 px-3.5 py-2 text-text-muted hover:text-foreground hover:bg-background transition-colors"
                 >
@@ -189,5 +185,19 @@ export default function WorkspaceHeader() {
 
       </div>
     </header>
+  );
+}
+
+export default function WorkspaceHeader() {
+  return (
+    <Suspense
+      fallback={
+        <header className="sticky top-0 z-40 w-full bg-background/90 border-b border-border-mute backdrop-blur-md h-16 flex items-center justify-between px-6">
+          <Logo href="/workspace" size="md" />
+        </header>
+      }
+    >
+      <WorkspaceHeaderNav />
+    </Suspense>
   );
 }

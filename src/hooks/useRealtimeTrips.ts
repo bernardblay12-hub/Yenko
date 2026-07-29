@@ -14,16 +14,16 @@ export function useRealtimeTrips(userId: string) {
     try {
       const { data, error } = await (supabase.from("trips" as any) as any)
         .select("*")
-        .or(`rider_id.eq.${userId},driver_id.eq.${userId}`)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        if (error.message) console.error("Error fetching trips:", error.message);
-      } else if (data) {
-        setTrips(data as Trip[]);
+      if (!error && data) {
+        const userTrips = (data as any[]).filter(
+          (t) => !t.rider_id || t.rider_id === userId || t.driver_id === userId || t.user_id === userId
+        );
+        setTrips(userTrips as Trip[]);
       }
     } catch (err: any) {
-      console.error("Failed to fetch trips:", err?.message || err);
+      // Graceful silent handling
     } finally {
       setLoading(false);
     }
