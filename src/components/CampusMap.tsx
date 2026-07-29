@@ -101,9 +101,10 @@ export default function CampusMap({
       attributionControl: false,
     });
 
-    // Dark-friendly tile layer
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19,
+    // High-resolution Google Satellite + Hybrid Road & Label Layer
+    L.tileLayer("https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"],
     }).addTo(map);
 
     // Re-add attribution in corner

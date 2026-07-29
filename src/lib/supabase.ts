@@ -87,5 +87,5 @@ export const UMAT_CAMPUS_HOTSPOTS: CampusLocation[] = [
   { id: "loc-8", name: "Administration Block",     category: "faculty",    description: "Vice Chancellor & Registrar Offices",               lat: 5.2990, lng: -2.0018 },
 ];
 
-export const UMAT_CENTER = { lat: 5.2974, lng: -2.0019 };
-export const UMAT_DEFAULT_ZOOM = 17;
+export const UMAT_CENTER = { lat: 5.2991, lng: -2.0006 };
+export const UMAT_DEFAULT_ZOOM = 18;

@@ -284,16 +284,23 @@ export default function WorkspacePage() {
     try {
       let { error } = await (supabase.from("trips" as any) as any).insert(newTrip);
 
-      if (error && error.message?.includes("column")) {
-        const fallbackTrip = { ...newTrip };
-        delete fallbackTrip.distance_km;
-        if (error.message.includes("otp_code")) delete fallbackTrip.otp_code;
-        if (error.message.includes("pickup_lat")) {
-          delete fallbackTrip.pickup_lat;
-          delete fallbackTrip.pickup_lng;
-          delete fallbackTrip.dropoff_lat;
-          delete fallbackTrip.dropoff_lng;
-        }
+      // Fallback if remote PostgreSQL schema doesn't have optional geo/lat/lng/distance columns
+      if (error && (error.message?.includes("column") || error.message?.includes("schema cache"))) {
+        const fallbackTrip: any = {
+          id: tripId,
+          rider_id: userId!,
+          service_type: serviceType,
+          status: "pending",
+          pickup_location: pickupLocation.name,
+          dropoff_location: dropoffLocation.name,
+          package_details: serviceType === "delivery" ? packageDetails : null,
+          recipient_phone: recipientPhone || null,
+          vehicle_type: vehicleType,
+          fare_amount: fare,
+          payment_method: paymentMethod,
+          payment_status: paymentMethod === "cash" ? "cash_on_delivery" : "pending",
+          created_at: new Date().toISOString(),
+        };
 
         const fallbackRes = await (supabase.from("trips" as any) as any).insert(fallbackTrip);
         error = fallbackRes.error;
